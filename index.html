@@ -342,30 +342,45 @@
                 btn.classList.toggle('cursor-not-allowed', btn.disabled);
             },
             // --- FIXED SEARCH ---
+// --- FIXED SEARCH FUNCTION ---
             handleSearch: (q) => {
                 const dd = document.getElementById('search-results-dropdown');
                 if (!q || q.length < 2) { dd.classList.add('hidden'); return; }
+                
                 if (STATE.searchTimeout) clearTimeout(STATE.searchTimeout);
+                
                 STATE.searchTimeout = setTimeout(async () => {
-                    dd.classList.remove('hidden'); dd.innerHTML = 'Searching...';
-                    const { data, error } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%`).limit(5);
+                    dd.classList.remove('hidden'); 
+                    dd.innerHTML = '<div class="p-2 text-xs font-bold text-slate-400">Mencari...</div>';
+                    
+                    // ✅ FIXED: Used Backticks (`) below so ${q} works
+                    const { data, error } = await sbClient
+                        .from('personnel')
+                        .select('*')
+                        .or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%`) 
+                        .limit(7);
+                    
                     dd.innerHTML = '';
-                    if(error) { dd.innerHTML = `<div class="p-2 text-red-500 text-xs">Error: ${error.message}</div>`; return; }
+                    
+                    if(error) { 
+                        dd.innerHTML = `<div class="p-2 text-red-500 text-xs">Error: ${error.message}</div>`; 
+                        return; 
+                    }
+                    
                     if(!data || !data.length) {
-                        const btn = Utils.createEl('div', "p-2 text-indigo-600 cursor-pointer", `+ New "${q}"?`);
+                        const btn = Utils.createEl('div', "p-2 text-indigo-600 cursor-pointer font-bold", `+ Rekod Baru "${q}"?`);
                         btn.onclick = () => CallLog.prepareNew(q);
                         dd.appendChild(btn);
                     } else {
                         data.forEach(p => {
                             const item = Utils.createEl('div', "p-2 border-b cursor-pointer hover:bg-slate-50");
-                            item.innerHTML = `<div class="font-bold text-xs">${p.nama}</div><div class="text-[10px] text-slate-400">${p.ic_number}</div>`;
+                            item.innerHTML = `<div class="font-bold text-xs uppercase">${p.nama}</div><div class="text-[10px] text-slate-400 font-bold">${p.ic_number}</div>`;
                             item.onclick = () => CallLog.fill(p);
                             dd.appendChild(item);
                         });
                     }
                 }, 300);
-            },
-            fill: (p) => {
+            },         fill: (p) => {
                 ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(k => {
                     const el = document.getElementById(k);
                     if(el) { el.value = p[k==='ic'?'ic_number':k] || ''; el.dispatchEvent(new Event('input')); }
