@@ -1,1 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Sistem Rekod IT UTM | MOE Edition</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --base-font-size: 16px; --primary: #1e293b; --accent: #4f46e5; }
+        html { font-size: var(--base-font-size); scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; overflow-x: hidden; width: 100vw; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .hidden-section { display: none !important; }
+        .table-container { width: 100%; overflow-x: auto; border: 1px solid #f1f5f9; background: white; border-radius: 0.75rem; }
+        table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; }
+        th, td { padding: 0.75rem 1rem; }
+        th { background: #f8fafc; font-weight: 600; border-bottom: 2px solid #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 10; }
+        .wrap-mode table { min-width: 100% !important; table-layout: auto !important; }
+        .wrap-mode th, .wrap-mode td { white-space: normal !important; word-break: break-word; font-size: 14px !important; }
+        .compact-mode .table-container { overflow-x: hidden !important; }
+        .compact-mode table { min-width: 100% !important; table-layout: fixed !important; }
+        .compact-mode th, .compact-mode td { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; font-size: 10px !important; padding: 0.3rem 0.4rem !important; }
+        .loader { border: 3px solid #e2e8f0; border-top: 3px solid var(--accent); border-radius: 50%; width: 48px; height: 48px; animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .login-btn-anim.loading { background-color: #0f172a !important; color: transparent !important; pointer-events: none; }
+        .tab-active-main { background-color: white !important; color: var(--accent) !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .tab-active-sub { color: var(--accent) !important; border-bottom: 3px solid var(--accent) !important; background-color: transparent !important; }
+        .glass-header { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); }
+        .card-modern { background: white; border: 1px solid #f1f5f9; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); border-radius: 1rem; }
+        .input-modern { transition: all 0.2s ease; border: 1px solid #e2e8f0; }
+        .input-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); outline: none; }
+        .row-late { background-color: #fef2f2 !important; } 
+        .text-late { color: #dc2626 !important; font-weight: 700; }
+        .btn-hover { transition: transform 0.1s ease, background-color 0.2s ease; }
+        .btn-hover:active { transform: scale(0.97); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <div id="index-page" class="flex-grow flex flex-col items-center justify-center bg-white">
+        <div class="loader mb-6"></div>
+        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Rekod IT UTM</h1>
+        <p class="text-slate-400 text-sm mt-2 font-medium">Initializing secure connection...</p>
+    </div>
+
+    <div id="login-page" class="hidden-section flex-grow flex flex-col items-center justify-center p-6 bg-slate-50">
+        <div class="card-modern p-10 w-full max-w-md">
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">Sistem Rekod IT</h1>
+            </div>
+            <form id="login-form" class="space-y-5" autocomplete="off">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Emel Rasmi</label>
+                    <input type="email" id="email" class="input-modern w-full px-4 py-3 rounded-xl" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Kata Laluan</label>
+                    <input type="password" id="password" class="input-modern w-full px-4 py-3 rounded-xl" required>
+                </div>
+                <div id="login-error" class="text-red-500 text-sm hidden bg-red-50 p-4 rounded-xl"></div>
+                <button type="submit" id="login-btn" class="login-btn-anim btn-hover w-full bg-indigo-600 text-white font-bold py-4 rounded-xl flex items-center justify-center">Akses Sistem</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-page" class="hidden-section min-h-screen flex flex-col">
+        <nav class="glass-header text-white shadow-xl sticky top-0 z-50 border-b border-slate-800">
+            <div class="w-full px-4 md:px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="font-extrabold text-lg md:text-xl tracking-tight">UTM <span class="text-indigo-400">IT</span></span>
+                    <div class="flex gap-1 bg-slate-800/50 p-1 rounded-xl">
+                        <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="tab-active-main px-4 py-2 rounded-lg text-xs font-bold uppercase">Call Log</button>
+                        <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="px-4 py-2 rounded-lg text-xs font-bold uppercase">Pinjaman</button>
+                        <button onclick="Navigation.switchModule('summary')" id="nav-summary" class="px-4 py-2 rounded-lg text-xs font-bold uppercase">Ringkasan</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="user-display" class="hidden sm:inline text-slate-300 text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full"></span>
+                    <button onclick="Auth.logout()" class="bg-rose-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">Keluar</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full">
+            <div id="call-log-module" class="w-full space-y-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
+                    <div class="card-modern p-3 border-l-4 border-l-indigo-500"><div class="text-[9px] font-extrabold text-slate-400 uppercase">Panggilan Hari Ini</div><div id="stat-calls-today" class="text-2xl font-black text-slate-800">0</div></div>
+                    <div class="card-modern p-3 border-l-4 border-l-emerald-500"><div class="text-[9px] font-extrabold text-slate-400 uppercase">Selesai Aduan</div><div id="stat-solved-pct" class="text-2xl font-black text-slate-800">0%</div></div>
+                    <div class="card-modern p-3 border-l-4 border-l-rose-500"><div class="text-[9px] font-extrabold text-slate-400 uppercase">Tidak Selesai</div><div id="stat-pending-count" class="text-2xl font-black text-slate-800">0</div></div>
+                    <div class="card-modern p-3 border-l-4 border-l-amber-500"><div class="text-[9px] font-extrabold text-slate-400 uppercase">Jumlah Personnel</div><div id="stat-total-personnel" class="text-2xl font-black text-slate-800">0</div></div>
+                </div>
+
+                <div class="flex items-center bg-white p-1 rounded-xl shadow-sm w-fit mb-4">
+                    <button onclick="Navigation.switchSubTab('call-log', 'input')" id="tab-cl-input" class="tab-active-sub px-6 py-2 rounded-lg font-bold text-sm">Input</button>
+                    <button onclick="Navigation.switchSubTab('call-log', 'records')" id="tab-cl-records" class="text-slate-400 px-6 py-2 rounded-lg font-bold text-sm">Database</button>
+                </div>
+
+                <div id="cl-input-section">
+                    <div class="card-modern p-4 mb-4">
+                        <div class="relative max-w-xl">
+                            <input type="text" id="global-search" class="input-modern w-full px-4 py-2.5 rounded-xl text-sm" placeholder="Cari Nama / IC / PTJ...">
+                            <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-2xl rounded-2xl hidden mt-2 p-1.5 border border-slate-100"></div>
+                        </div>
+                    </div>
+                    <div class="card-modern p-5">
+                        <form id="data-form" autocomplete="off">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                <input id="nama" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Nama" readonly>
+                                <input id="ic" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="IC" readonly>
+                                <input id="kod_ptj" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="PTJ" readonly>
+                                <input id="department" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Jabatan" readonly>
+                                <input id="emel" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Emel" readonly>
+                                <input id="telefon" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Telefon" readonly>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <h3 class="font-bold text-xs mb-3 uppercase text-slate-500">Klasifikasi Aduan</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-[10px] font-bold uppercase">Medium</label>
+                                        <div id="container-komunikasi" class="flex flex-wrap gap-2 mt-1"></div>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold uppercase">Sistem</label>
+                                        <div id="container-sistem" class="grid grid-cols-2 gap-2 mt-1"></div>
+                                    </div>
+                                    <div class="col-span-full">
+                                        <label class="text-[10px] font-bold uppercase">Isu</label>
+                                        <select id="issue-dropdown" class="input-modern w-full p-2 rounded-lg text-xs mt-1"></select>
+                                    </div>
+                                </div>
+                                <button type="submit" id="submit-btn" disabled class="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-xl opacity-50 cursor-not-allowed">Rekod Aduan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="cl-records-section" class="hidden-section">
+                    <div class="card-modern overflow-hidden">
+                        <div class="p-4 flex justify-between items-center border-b border-slate-50">
+                            <h2 class="font-extrabold text-slate-800">Arkib Rekod</h2>
+                            <button onclick="Records.fetch()" class="bg-slate-100 p-2 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="table-container max-h-[65vh]">
+                            <table id="main-records-table">
+                                <thead id="records-table-head"></thead>
+                                <tbody id="records-table-body" class="text-slate-600 text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loan-module" class="hidden-section w-full space-y-4">
+                <div class="card-modern p-1">
+                    <div class="flex flex-wrap border-b border-slate-50 bg-slate-50/50 p-2 gap-1">
+                        <button onclick="Navigation.switchSubTab('loan', 'borrow')" id="tab-loan-borrow" class="tab-active-sub px-6 py-3 rounded-xl font-bold text-xs uppercase">Pinjaman Baru</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'return')" id="tab-loan-return" class="text-slate-400 px-6 py-3 rounded-xl font-bold text-xs uppercase">Pemulangan</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'admin')" id="tab-loan-admin" class="text-slate-400 px-6 py-3 rounded-xl font-bold text-xs uppercase">Inventory</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'history')" id="tab-loan-history" class="text-slate-400 px-6 py-3 rounded-xl font-bold text-xs uppercase">Arkib</button>
+                    </div>
+
+                    <div class="p-6">
+                        <div id="loan-borrow-section" class="max-w-4xl mx-auto">
+                            <form id="loanForm" class="space-y-6 bg-slate-50 p-8 rounded-3xl border border-slate-100">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <input type="text" id="loanUserName" list="userList" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="Nama Peminjam">
+                                    <datalist id="userList"></datalist>
+                                    <select id="deviceSelect" class="input-modern w-full px-4 py-3 rounded-xl"></select>
+                                    <input type="date" id="loanStartDate" class="input-modern w-full px-4 py-3 rounded-xl">
+                                    <input type="date" id="loanEndDate" class="input-modern w-full px-4 py-3 rounded-xl text-rose-600">
+                                    <select id="usageType" class="input-modern w-full px-4 py-3 rounded-xl">
+                                        <option value="Kegunaan Dalaman">Kegunaan Dalaman</option>
+                                        <option value="Kegunaan Luar">Kegunaan Luar (Outstation)</option>
+                                    </select>
+                                    <textarea id="usageDetails" rows="1" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="Tujuan..."></textarea>
+                                </div>
+                                <button type="button" onclick="Loan.submit()" class="w-full bg-indigo-600 text-white font-extrabold py-4 rounded-xl">Sahkan Pinjaman</button>
+                            </form>
+                        </div>
+
+                        <div id="loan-return-section" class="hidden-section text-center max-w-2xl mx-auto">
+                            <h3 class="text-xl font-bold mb-4">Proses Pemulangan</h3>
+                            <select id="returnSelect" class="input-modern w-full px-6 py-4 rounded-2xl mb-6 shadow-xl bg-white text-lg font-bold"></select>
+                            <button onclick="Loan.submitReturn()" class="bg-emerald-600 text-white font-extrabold py-4 px-12 rounded-2xl w-full">Sahkan Pulangan</button>
+                        </div>
+
+                        <div id="loan-admin-section" class="hidden-section">
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div class="lg:col-span-4 space-y-4">
+                                    <div class="bg-white border p-4 rounded-xl">
+                                        <h6 class="font-bold text-xs uppercase mb-2">Daftar Aset</h6>
+                                        <input id="newTag" class="input-modern w-full mb-2 p-2 rounded text-xs" placeholder="Tag">
+                                        <input id="newType" class="input-modern w-full mb-2 p-2 rounded text-xs" placeholder="Model">
+                                        <button onclick="Loan.addDevice()" class="w-full bg-indigo-500 text-white py-2 rounded font-bold text-xs">Simpan</button>
+                                    </div>
+                                </div>
+                                <div class="lg:col-span-8">
+                                    <h6 class="font-bold text-xs uppercase mb-2">Status Aktif</h6>
+                                    <div class="table-container"><table class="w-full"><tbody id="active-loans-body"></tbody></table></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="loan-history-section" class="hidden-section">
+                            <div class="table-container">
+                                <table id="loan-history-table">
+                                    <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500">
+                                        <tr>
+                                            <th>Masa</th><th>Peminjam</th><th>Aset</th><th>Tempoh</th><th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="loan-history-body" class="text-xs"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="summary-module" class="hidden-section">
+                <div class="card-modern p-6">
+                    <canvas id="summaryChart" class="max-h-[400px] mb-8"></canvas>
+                    <div class="table-container">
+                        <table id="summary-table">
+                            <thead class="bg-slate-50 text-[10px] uppercase">
+                                <tr><th>Perkara</th><th class="text-center">Total</th></tr>
+                            </thead>
+                            <tbody id="summary-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-8 right-8 bg-slate-900/95 text-white px-8 py-5 rounded-2xl shadow-2xl transform translate-y-32 transition-all duration-500 opacity-0 z-[100]"></div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        const CONFIG = { 
+            // TODO: REPLACE THESE WITH YOUR NEW KEYS FROM SUPABASE DASHBOARD
+            supabaseUrl: 'YOUR_NEW_SUPABASE_URL', 
+            supabaseKey: 'YOUR_NEW_ANON_KEY', // ONLY THE ANON KEY. NEVER PUT SERVICE_ROLE KEY HERE.
+            emailjsKey: '', 
+            emailjsServiceID: 'default_service',
+            emailjsTemplateID: 'template_overdue' 
+        };
+
+        // --- 2. GLOBAL STATE ---
+        const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16, userMap: {}, deviceMap: {} };
+        const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+
+        // --- 3. SECURITY UTILS (XSS PREVENTION) ---
+        const Utils = {
+            // Creates a DOM element safely (No innerHTML)
+            createElement: (tag, classes, text) => {
+                const el = document.createElement(tag);
+                if (classes) el.className = classes;
+                if (text) el.textContent = text;
+                return el;
+            },
+            showToast: (msg) => { 
+                const t = document.getElementById('toast'); 
+                t.textContent = msg; // Safe text
+                t.classList.remove('opacity-0', 'translate-y-32'); 
+                setTimeout(() => t.classList.add('opacity-0', 'translate-y-32'), 3000); 
+            },
+            showPage: (pageId) => {
+                ['index-page', 'login-page', 'main-page'].forEach(p => document.getElementById(p).classList.add('hidden-section'));
+                document.getElementById(pageId).classList.remove('hidden-section');
+            },
+            getToday: () => new Date().toISOString().split('T')[0]
+        };
+
+        // --- 4. AUTHENTICATION ---
+        const Auth = {
+            init: async () => {
+                const { data: { session } } = await sbClient.auth.getSession();
+                if (session) {
+                    Auth.onAuth(session.user);
+                } else {
+                    Utils.showPage('login-page');
+                }
+            },
+            login: async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('login-btn'); btn.classList.add('loading');
+                const { data, error } = await sbClient.auth.signInWithPassword({ 
+                    email: document.getElementById('email').value.trim(), 
+                    password: document.getElementById('password').value 
+                });
+                btn.classList.remove('loading');
+                if (error) { 
+                    const errEl = document.getElementById('login-error');
+                    errEl.textContent = error.message; 
+                    errEl.classList.remove('hidden'); 
+                }
+                else Auth.onAuth(data.user);
+            },
+            onAuth: async (user) => {
+                STATE.currentUser = user;
+                document.getElementById('user-display').textContent = user.email;
+                Utils.showPage('main-page');
+                CallLog.init();
+            },
+            logout: async () => {
+                await sbClient.auth.signOut();
+                window.location.reload();
+            }
+        };
+
+        // --- 5. CALL LOG MODULE ---
+        const CallLog = {
+            init: async () => {
+                CallLog.setupOptions();
+                Dashboard.refresh();
+            },
+            setupOptions: () => {
+                // Radio buttons for Komunikasi
+                const kContainer = document.getElementById('container-komunikasi');
+                kContainer.innerHTML = ''; // Clear
+                ["Email", "Call", "WhatsApp", "Walk-in"].forEach(opt => {
+                    const label = Utils.createElement('label', 'flex items-center gap-2 p-2 border rounded-lg cursor-pointer text-xs');
+                    const input = Utils.createElement('input', 'accent-indigo-600');
+                    input.type = 'radio'; input.name = 'komunikasi'; input.value = opt;
+                    input.onchange = CallLog.checkValidity;
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(opt));
+                    kContainer.appendChild(label);
+                });
+
+                // Radio buttons for Sistem
+                const sContainer = document.getElementById('container-sistem');
+                sContainer.innerHTML = '';
+                ["Portal", "ECP450", "SOLMAN", "BP1"].forEach(opt => {
+                    const label = Utils.createElement('label', 'flex items-center gap-2 p-2 border rounded-lg cursor-pointer text-xs');
+                    const input = Utils.createElement('input', 'accent-indigo-600');
+                    input.type = 'radio'; input.name = 'system_type'; input.value = opt;
+                    input.onchange = CallLog.checkValidity;
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(opt));
+                    sContainer.appendChild(label);
+                });
+
+                // Issues Dropdown
+                const sel = document.getElementById('issue-dropdown');
+                sel.innerHTML = '';
+                sel.appendChild(new Option('-- Pilih Isu --', ''));
+                ["ID Lock", "Role Issue", "System Error"].forEach(opt => sel.appendChild(new Option(opt, opt)));
+                sel.onchange = CallLog.checkValidity;
+            },
+            handleSearch: (q) => {
+                const dd = document.getElementById('search-results-dropdown');
+                if (q.length < 2) return dd.classList.add('hidden');
+                
+                if (STATE.searchTimeout) clearTimeout(STATE.searchTimeout);
+                STATE.searchTimeout = setTimeout(async () => {
+                    dd.classList.remove('hidden'); 
+                    dd.textContent = 'Mencari...';
+                    
+                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%`).limit(5);
+                    
+                    dd.innerHTML = ''; // Clear loading
+                    if(!data || data.length === 0) {
+                        const noRes = Utils.createElement('div', 'p-4 text-xs font-bold text-slate-400', 'Tiada Rekod');
+                        dd.appendChild(noRes);
+                        return;
+                    }
+
+                    data.forEach(p => {
+                        const item = Utils.createElement('div', 'p-3 hover:bg-slate-50 cursor-pointer border-b');
+                        const name = Utils.createElement('div', 'font-bold text-xs', p.nama);
+                        const sub = Utils.createElement('div', 'text-[10px] text-slate-400', `${p.ic_number} • ${p.kod_ptj}`);
+                        item.appendChild(name);
+                        item.appendChild(sub);
+                        item.onclick = () => CallLog.fill(p);
+                        dd.appendChild(item);
+                    });
+                }, 300);
+            },
+            fill: (p) => {
+                ['nama','ic','kod_ptj','department','emel','telefon'].forEach(k => {
+                    const dbKey = k === 'ic' ? 'ic_number' : k;
+                    document.getElementById(k).value = p[dbKey] || '';
+                });
+                document.getElementById('search-results-dropdown').classList.add('hidden');
+                CallLog.checkValidity();
+            },
+            checkValidity: () => {
+                const hasName = !!document.getElementById('nama').value;
+                const hasSys = !!document.querySelector('input[name="system_type"]:checked');
+                const hasIssue = !!document.getElementById('issue-dropdown').value;
+                const btn = document.getElementById('submit-btn');
+                btn.disabled = !(hasName && hasSys && hasIssue);
+                btn.classList.toggle('opacity-50', btn.disabled);
+                btn.classList.toggle('cursor-not-allowed', btn.disabled);
+            },
+            submit: async (e) => {
+                e.preventDefault();
+                const sys = document.querySelector('input[name="system_type"]:checked').value;
+                const kom = document.querySelector('input[name="komunikasi"]:checked')?.value || 'Call';
+                const issue = document.getElementById('issue-dropdown').value;
+                
+                const payload = {
+                    nama: document.getElementById('nama').value,
+                    ic_number: document.getElementById('ic').value,
+                    department: document.getElementById('department').value,
+                    sistem: sys,
+                    perkara: issue,
+                    komunikasi: kom,
+                    perekod: STATE.currentUser.email,
+                    confirmation: 'TIDAK'
+                };
+
+                const { error } = await sbClient.from('rekod').insert([payload]);
+                if (error) alert(error.message);
+                else {
+                    Utils.showToast('Rekod Disimpan');
+                    document.getElementById('data-form').reset();
+                    CallLog.checkValidity();
+                    Dashboard.refresh();
+                }
+            }
+        };
+
+        // --- 6. LOAN MODULE (SECURE VERSION) ---
+        const Loan = {
+            loadData: async () => {
+                // 1. Load Users
+                const { data: users } = await sbClient.from('user_ba').select('*');
+                const dl = document.getElementById('userList');
+                dl.innerHTML = '';
+                users?.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.name;
+                    dl.appendChild(opt);
+                });
+
+                // 2. Load Devices (Available)
+                const { data: devs } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia');
+                const ds = document.getElementById('deviceSelect');
+                ds.innerHTML = '';
+                ds.appendChild(new Option('-- Pilih Peranti --', ''));
+                devs?.forEach(d => ds.appendChild(new Option(`${d.tag} (${d.type})`, d.tag)));
+
+                // 3. Load Returns
+                const { data: active } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
+                const rs = document.getElementById('returnSelect');
+                rs.innerHTML = '';
+                rs.appendChild(new Option('-- Pilih --', ''));
+                active?.forEach(l => rs.appendChild(new Option(`${l.device_tag} - ${l.user_name}`, l.device_tag)));
+
+                Loan.loadActiveList(active);
+            },
+            loadActiveList: (data) => {
+                const tbody = document.getElementById('active-loans-body');
+                tbody.innerHTML = '';
+                if(!data) return;
+                data.forEach(l => {
+                    const tr = Utils.createElement('tr', 'border-b hover:bg-slate-50');
+                    tr.appendChild(Utils.createElement('td', 'p-3 font-bold', l.user_name));
+                    tr.appendChild(Utils.createElement('td', 'p-3 text-indigo-600', l.device_tag));
+                    tr.appendChild(Utils.createElement('td', 'p-3', l.end_date));
+                    tbody.appendChild(tr);
+                });
+            },
+            submit: async () => {
+                const btn = document.querySelector('#loanForm button');
+                const originalText = btn.textContent;
+                btn.textContent = 'Processing...'; btn.disabled = true;
+
+                const payload = {
+                    action: 'LOAN',
+                    user_name: document.getElementById('loanUserName').value,
+                    device_tag: document.getElementById('deviceSelect').value,
+                    start_date: document.getElementById('loanStartDate').value,
+                    end_date: document.getElementById('loanEndDate').value,
+                    usage_type: document.getElementById('usageType').value,
+                    usage_details: document.getElementById('usageDetails').value
+                };
+
+                try {
+                    // SECURE: Call Edge Function
+                    const { data, error } = await sbClient.functions.invoke('process-loan', { body: payload });
+                    if (error) throw error;
+                    if (data.error) throw new Error(data.error);
+
+                    Utils.showToast('Pinjaman Berjaya');
+                    document.getElementById('loanForm').reset();
+                    Loan.loadData();
+                } catch(e) {
+                    alert("Ralat: " + e.message);
+                } finally {
+                    btn.textContent = originalText; btn.disabled = false;
+                }
+            },
+            submitReturn: async () => {
+                const tag = document.getElementById('returnSelect').value;
+                if(!tag) return;
+
+                try {
+                    const { data, error } = await sbClient.functions.invoke('process-loan', { 
+                        body: { action: 'RETURN', device_tag: tag } 
+                    });
+                    if (error) throw error;
+                    if (data.error) throw new Error(data.error);
+
+                    Utils.showToast('Pemulangan Berjaya');
+                    Loan.loadData();
+                } catch(e) { alert(e.message); }
+            }
+        };
+
+        // --- 7. RECORDS & DASHBOARD ---
+        const Records = {
+            fetch: async () => {
+                const tb = document.getElementById('records-table-body');
+                tb.innerHTML = '';
+                const { data } = await sbClient.from('rekod').select('*').order('created_at', {ascending:false}).limit(50);
+                
+                // Safe DOM Building (No XSS)
+                data?.forEach(r => {
+                    const tr = document.createElement('tr');
+                    [Utils.getToday(r.created_at), r.nama, r.sistem, r.perkara, r.confirmation].forEach(txt => {
+                        tr.appendChild(Utils.createElement('td', 'p-3', txt || '-'));
+                    });
+                    tb.appendChild(tr);
+                });
+            }
+        };
+
+        const Dashboard = {
+            refresh: async () => {
+                const { count } = await sbClient.from('rekod').select('*', { count: 'exact', head: true }).eq('created_at', Utils.getToday());
+                document.getElementById('stat-calls-today').textContent = count || 0;
+            }
+        };
+
+        // --- 8. NAVIGATION ---
+        const Navigation = {
+            switchModule: (mod) => {
+                ['call-log', 'loan', 'summary'].forEach(m => {
+                    document.getElementById(m + '-module').classList.toggle('hidden-section', m !== mod);
+                    const btn = document.getElementById('nav-' + m);
+                    if(m === mod) btn.classList.add('tab-active-main'); else btn.classList.remove('tab-active-main');
+                });
+                if(mod === 'loan') Loan.loadData();
+            },
+            switchSubTab: (mod, tab) => {
+                if(mod === 'call-log') {
+                    const isInput = tab === 'input';
+                    document.getElementById('cl-input-section').classList.toggle('hidden-section', !isInput);
+                    document.getElementById('cl-records-section').classList.toggle('hidden-section', isInput);
+                } else if(mod === 'loan') {
+                    ['borrow', 'return', 'admin', 'history'].forEach(t => {
+                        document.getElementById(`loan-${t}-section`).classList.toggle('hidden-section', t !== tab);
+                        const b = document.getElementById(`tab-loan-${t}`);
+                        if(t===tab) b.className = 'tab-active-sub px-6 py-3 rounded-xl font-bold text-xs uppercase';
+                        else b.className = 'text-slate-400 px-6 py-3 rounded-xl font-bold text-xs uppercase';
+                    });
+                    if(tab === 'borrow') Loan.loadData();
+                }
+            }
+        };
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            Auth.init();
+            document.getElementById('login-form').addEventListener('submit', Auth.login);
+            document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
+            document.getElementById('data-form').addEventListener('submit', CallLog.submit);
+        });
+    </script>
+</body>
+</html>
