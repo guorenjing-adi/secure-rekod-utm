@@ -5,15 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>Sistem Rekod IT UTM | Secure Edition</title>
+    <title>Sistem Rekod IT UTM | MOE Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,6 +21,8 @@
         :root { --base-font-size: 16px; --primary: #1e293b; --accent: #4f46e5; }
         html { font-size: var(--base-font-size); scroll-behavior: smooth; }
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; overflow-x: hidden; width: 100vw; }
+        
+        /* SCROLLBAR & TABLES */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -30,11 +31,8 @@
         table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; }
         th, td { padding: 0.75rem 1rem; }
         th { background: #f8fafc; font-weight: 600; border-bottom: 2px solid #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 10; }
-        .wrap-mode table { min-width: 100% !important; table-layout: auto !important; }
-        .wrap-mode th, .wrap-mode td { white-space: normal !important; word-break: break-word; font-size: 14px !important; }
-        .compact-mode .table-container { overflow-x: hidden !important; }
-        .compact-mode table { min-width: 100% !important; table-layout: fixed !important; }
-        .compact-mode th, .compact-mode td { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; font-size: 10px !important; padding: 0.3rem 0.4rem !important; }
+        
+        /* UTILS */
         .loader { border: 3px solid #e2e8f0; border-top: 3px solid var(--accent); border-radius: 50%; width: 48px; height: 48px; animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .login-btn-anim.loading { background-color: #0f172a !important; color: transparent !important; pointer-events: none; }
@@ -48,7 +46,6 @@
         .text-late { color: #dc2626 !important; font-weight: 700; }
         .btn-hover { transition: transform 0.1s ease, background-color 0.2s ease; }
         .btn-hover:active { transform: scale(0.97); }
-        #debug-console { background: #0f172a; color: #10b981; font-family: 'Fira Code', monospace; height: 120px; overflow-y: auto; font-size: 11px; padding: 12px; border-radius: 0.75rem; border: 1px solid #1e293b; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -56,7 +53,7 @@
     <div id="index-page" class="flex-grow flex flex-col items-center justify-center bg-white">
         <div class="loader mb-6"></div>
         <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Rekod IT UTM</h1>
-        <p class="text-slate-400 text-sm mt-2 font-medium">Initializing secure connection...</p>
+        <p class="text-slate-400 text-sm mt-2 font-medium">Initializing connection...</p>
     </div>
 
     <div id="login-page" class="hidden-section flex-grow flex flex-col items-center justify-center p-6 bg-slate-50">
@@ -69,85 +66,65 @@
                 <p class="text-slate-500 text-sm mt-1">Akses Pangkalan Data</p>
             </div>
             <form id="login-form" class="space-y-5" autocomplete="off">
-                <input type="email" id="email" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="Email" required>
+                <input type="email" id="email" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="nama@utm.my" required>
                 <input type="password" id="password" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="Password" required>
                 <div id="login-error" class="text-red-500 text-sm hidden bg-red-50 border border-red-100 p-4 rounded-xl font-medium"></div>
-                <button type="submit" id="login-btn" class="login-btn-anim btn-hover w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center">Akses Sistem</button>
+                <button type="submit" id="login-btn" class="login-btn-anim btn-hover w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center">Log Masuk</button>
             </form>
-            <div id="debug-console" class="mt-8"><div>> System ready. Waiting for auth...</div></div>
         </div>
     </div>
 
     <div id="main-page" class="hidden-section min-h-screen flex flex-col">
         <nav class="glass-header text-white shadow-xl sticky top-0 z-50 border-b border-slate-800">
-            <div class="w-full px-4 md:px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-4">
-                <div class="flex items-center w-full lg:w-auto justify-between lg:justify-start">
-                    <div class="flex items-center gap-3 mr-6 md:mr-10">
-                        <div class="p-2 bg-indigo-500 rounded-lg"><i data-lucide="database" class="w-5 h-5"></i></div>
-                        <span class="font-extrabold text-lg md:text-xl tracking-tight">UTM <span class="text-indigo-400">IT</span></span>
-                    </div>
-                    <div class="flex gap-1 bg-slate-800/50 p-1 rounded-xl border border-slate-700 overflow-x-auto">
-                        <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="tab-active-main whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide">Call Log</button>
-                        <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide">Pinjaman ICT</button>
-                        <button onclick="Navigation.switchModule('summary')" id="nav-summary" class="whitespace-nowrap px-4 md:px-5 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all uppercase tracking-wide">Ringkasan</button>
+            <div class="w-full px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center gap-6">
+                    <span class="font-extrabold text-lg tracking-tight">UTM <span class="text-indigo-400">IT</span></span>
+                    <div class="flex gap-1 bg-slate-800/50 p-1 rounded-xl">
+                        <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="tab-active-main px-4 py-2 rounded-lg text-xs font-bold uppercase">Call Log</button>
+                        <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="px-4 py-2 rounded-lg text-xs font-bold uppercase">Pinjaman</button>
+                        <button onclick="Navigation.switchModule('summary')" id="nav-summary" class="px-4 py-2 rounded-lg text-xs font-bold uppercase">Ringkasan</button>
                     </div>
                 </div>
-                <div class="flex items-center gap-3 md:gap-5 w-full lg:w-auto justify-end">
-                    <span id="user-display" class="hidden sm:inline text-slate-300 text-[10px] md:text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700"></span>
-                    <button onclick="Auth.logout()" class="bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-rose-900/20 transition-all flex items-center gap-2">Keluar</button>
+                <div class="flex items-center gap-3">
+                    <span id="user-display" class="hidden sm:inline text-slate-300 text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700"></span>
+                    <button onclick="Auth.logout()" class="bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">Keluar</button>
                 </div>
             </div>
         </nav>
 
-        <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
-            <div id="call-log-module" class="w-full space-y-4 md:space-y-6">
-                <div id="it-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
-                    <div class="card-modern p-3 border-l-4 border-l-indigo-500 bg-white">
-                        <div class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Panggilan Hari Ini</div>
-                        <div id="stat-calls-today" class="text-xl md:text-2xl font-black text-slate-800">0</div>
-                    </div>
+        <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full">
+            
+            <div id="call-log-module" class="w-full space-y-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
+                    <div class="card-modern p-3 border-l-4 border-l-indigo-500"><div class="text-[9px] font-extrabold text-slate-400 uppercase">Panggilan Hari Ini</div><div id="stat-calls-today" class="text-2xl font-black text-slate-800">0</div></div>
                 </div>
 
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center bg-white p-1 rounded-xl shadow-sm border border-slate-100 overflow-x-auto w-full md:w-auto">
-                        <button onclick="Navigation.switchSubTab('call-log', 'input')" id="tab-cl-input" class="tab-active-sub whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all">Dashboard Input</button>
-                        <button onclick="Navigation.switchSubTab('call-log', 'records')" id="tab-cl-records" class="text-slate-400 whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all">Pangkalan Data</button>
-                    </div>
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="Navigation.switchSubTab('call-log', 'input')" id="tab-cl-input" class="tab-active-sub px-4 py-2 font-bold text-sm">Input</button>
+                    <button onclick="Navigation.switchSubTab('call-log', 'records')" id="tab-cl-records" class="text-slate-400 px-4 py-2 font-bold text-sm">Pangkalan Data</button>
                 </div>
 
-                <div id="cl-input-section" class="grid grid-cols-1 gap-4 md:gap-6">
-                    <div class="card-modern p-4 md:p-5">
-                        <h2 class="text-[10px] font-bold text-slate-400 mb-2 flex gap-2 items-center uppercase tracking-widest"><i data-lucide="search" class="w-3.5 h-3.5 text-indigo-500"></i> Carian User</h2>
-                        <div class="relative max-w-xl">
-                            <input type="text" id="global-search" class="input-modern w-full px-4 py-2.5 rounded-xl text-sm md:text-base font-medium" placeholder="Cari Nama, IC, atau Kod PTJ...">
-                            <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-2xl rounded-2xl border border-slate-100 hidden max-h-60 overflow-y-auto mt-2 p-1.5"></div>
-                        </div>
+                <div id="cl-input-section" class="grid grid-cols-1 gap-4">
+                    <div class="card-modern p-4">
+                        <h2 class="text-[10px] font-bold text-slate-400 mb-2 uppercase"><i data-lucide="search" class="w-3.5 h-3.5 text-indigo-500"></i> Carian User</h2>
+                        <div class="relative"><input type="text" id="global-search" class="input-modern w-full px-4 py-2.5 rounded-xl text-sm" placeholder="Taip nama..."><div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-2xl rounded-2xl hidden mt-2 p-1.5 border"></div></div>
                     </div>
 
-                    <div class="card-modern p-1">
-                        <div class="p-4 md:p-5 border-b border-slate-50">
-                            <h2 class="text-sm md:text-base font-extrabold text-slate-800 flex gap-2 items-center">Borang Log Panggilan</h2>
-                        </div>
-                        <form id="data-form" class="p-4 md:p-5" autocomplete="off">
-                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                                <div class="lg:col-span-7 space-y-4">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div class="col-span-full"><input type="text" id="nama" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 uppercase text-sm" placeholder="Nama Penuh" readonly></div>
-                                        <div><input type="text" id="ic" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="No. Kad Pengenalan" readonly></div>
-                                        <div><input type="text" id="kod_ptj" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Kod PTJ" readonly></div>
-                                        <div><input type="text" id="department" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 text-xs" placeholder="Jabatan" readonly></div>
-                                        <div><input type="email" id="emel" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 text-xs" placeholder="Emel" readonly></div>
-                                        <div><input type="text" id="telefon" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Telefon" readonly></div>
-                                        <div><input type="text" id="gred" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 uppercase text-sm" placeholder="Gred" readonly></div>
-                                    </div>
-                                </div>
-                                <div class="lg:col-span-5 bg-slate-50 p-4 md:p-5 rounded-xl border border-slate-100 h-fit space-y-4">
-                                    <h3 class="font-bold text-slate-800 text-[11px]">Klasifikasi Aduan</h3>
-                                    <div><div class="text-[9px] font-bold text-slate-700 uppercase mb-1.5">Medium</div><div id="container-komunikasi" class="flex flex-wrap gap-2"></div></div>
-                                    <div><div class="text-[9px] font-bold text-slate-700 uppercase mb-1.5">Sistem</div><div id="container-sistem" class="grid grid-cols-2 gap-2"></div></div>
-                                    <div><div class="text-[9px] font-bold text-slate-700 uppercase mb-1.5">Isu</div><select id="issue-dropdown" class="input-modern w-full px-3 py-2 rounded-lg bg-white text-xs"></select></div>
-                                    <button type="submit" id="submit-btn" disabled class="btn-hover w-full mt-4 bg-emerald-600 text-white font-extrabold py-3.5 rounded-xl opacity-50 cursor-not-allowed">Rekod Aduan</button>
-                                </div>
+                    <div class="card-modern p-5">
+                        <form id="data-form" autocomplete="off">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <input id="nama" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Nama" readonly>
+                                <input id="ic" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="IC" readonly>
+                                <input id="kod_ptj" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="PTJ" readonly>
+                                <input id="department" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Jabatan" readonly>
+                                <input id="emel" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Emel" readonly>
+                                <input id="telefon" class="input-modern px-3 py-2 rounded-lg bg-slate-50 text-sm" placeholder="Telefon" readonly>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+                                <div><div class="text-[9px] font-bold uppercase mb-1">Medium</div><div id="container-komunikasi" class="flex gap-2"></div></div>
+                                <div><div class="text-[9px] font-bold uppercase mb-1">Sistem</div><div id="container-sistem" class="grid grid-cols-2 gap-2"></div></div>
+                                <div><div class="text-[9px] font-bold uppercase mb-1">Isu</div><select id="issue-dropdown" class="input-modern w-full p-2 rounded-lg text-xs"></select></div>
+                                <button type="submit" id="submit-btn" disabled class="btn-hover w-full bg-emerald-600 text-white font-bold py-3 rounded-xl opacity-50 cursor-not-allowed">Rekod Aduan</button>
                             </div>
                         </form>
                     </div>
@@ -155,15 +132,12 @@
 
                 <div id="cl-records-section" class="hidden-section">
                     <div class="card-modern overflow-hidden">
-                        <div class="p-4 md:p-6 bg-white border-b border-slate-50 flex justify-between items-center">
-                            <h2 class="text-base md:text-lg font-extrabold text-slate-800">Arkib Rekod</h2>
-                            <button onclick="Records.fetch()" class="bg-slate-100 p-2 rounded-lg hover:bg-slate-200"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                        <div class="p-4 bg-white border-b border-slate-50 flex justify-between items-center">
+                            <h2 class="font-extrabold text-slate-800">Arkib Rekod</h2>
+                            <button onclick="Records.fetch()" class="bg-slate-100 p-2 rounded-lg"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                         </div>
                         <div class="table-container m-1 max-h-[65vh]">
-                            <table id="main-records-table" class="data-table">
-                                <thead id="records-table-head" class="uppercase tracking-wider sticky top-0 bg-white z-20"></thead>
-                                <tbody id="records-table-body" class="text-slate-600"></tbody>
-                            </table>
+                            <table id="main-records-table"><thead id="records-table-head"></thead><tbody id="records-table-body" class="text-xs text-slate-600"></tbody></table>
                         </div>
                     </div>
                 </div>
@@ -171,62 +145,78 @@
 
             <div id="loan-module" class="hidden-section w-full space-y-4">
                 <div class="card-modern p-1">
-                    <div class="flex flex-wrap border-b border-slate-50 bg-slate-50/50 p-2 overflow-x-auto gap-1">
-                        <button onclick="Navigation.switchSubTab('loan', 'borrow')" id="tab-loan-borrow" class="tab-active-sub whitespace-nowrap px-6 py-3 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">Pinjaman Baru</button>
-                        <button onclick="Navigation.switchSubTab('loan', 'return')" id="tab-loan-return" class="text-slate-400 whitespace-nowrap px-6 py-3 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">Pemulangan</button>
-                        <button onclick="Navigation.switchSubTab('loan', 'admin')" id="tab-loan-admin" class="text-slate-400 whitespace-nowrap px-6 py-3 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">Inventory</button>
+                    <div class="flex border-b border-slate-50 bg-slate-50/50 p-2 gap-1 overflow-x-auto">
+                        <button onclick="Navigation.switchSubTab('loan', 'borrow')" id="tab-loan-borrow" class="tab-active-sub px-6 py-3 font-bold text-xs uppercase">Pinjaman Baru</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'return')" id="tab-loan-return" class="text-slate-400 px-6 py-3 font-bold text-xs uppercase">Pemulangan</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'admin')" id="tab-loan-admin" class="text-slate-400 px-6 py-3 font-bold text-xs uppercase">Inventory</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'history')" id="tab-loan-history" class="text-slate-400 px-6 py-3 font-bold text-xs uppercase">Arkib Rekod</button>
                     </div>
 
-                    <div class="p-6 md:p-8">
+                    <div class="p-6">
                         <div id="loan-borrow-section" class="max-w-4xl mx-auto">
-                            <form id="loanForm" class="space-y-8 bg-slate-50 p-6 md:p-10 rounded-3xl border border-slate-100 shadow-sm">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div class="col-span-full md:col-span-1">
-                                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Peminjam</label>
-                                        <input type="text" id="loanUserName" list="userList" class="input-modern w-full px-4 py-3 rounded-xl bg-white font-semibold" placeholder="Taip nama...">
+                            <form id="loanForm" class="space-y-6 bg-slate-50 p-8 rounded-3xl border border-slate-100 shadow-sm">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Peminjam</label>
+                                        <input type="text" id="loanUserName" list="userList" class="input-modern w-full px-4 py-3 rounded-xl bg-white font-bold" placeholder="Pilih Nama...">
                                         <datalist id="userList"></datalist>
                                     </div>
-                                    <div><label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Peranti</label><select id="deviceSelect" class="input-modern w-full px-4 py-3 rounded-xl bg-white font-semibold"></select></div>
-                                    <div><label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Mula</label><input type="date" id="loanStartDate" class="input-modern w-full px-4 py-3 rounded-xl bg-white"></div>
-                                    <div><label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Tamat</label><input type="date" id="loanEndDate" class="input-modern w-full px-4 py-3 rounded-xl bg-white"></div>
-                                    <div><label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Jenis</label><select id="usageType" class="input-modern w-full px-4 py-3 rounded-xl bg-white"><option>Kegunaan Dalaman</option><option>Kegunaan Luar</option></select></div>
-                                    <div class="md:col-span-1"><label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Tujuan</label><textarea id="usageDetails" rows="1" class="input-modern w-full px-4 py-3 rounded-xl bg-white"></textarea></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Peranti</label><select id="deviceSelect" class="input-modern w-full px-4 py-3 rounded-xl bg-white"></select></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Mula</label><input type="date" id="loanStartDate" class="input-modern w-full px-4 py-3 rounded-xl bg-white"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tamat</label><input type="date" id="loanEndDate" class="input-modern w-full px-4 py-3 rounded-xl bg-white text-red-600 font-bold"></div>
+                                    <div><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Jenis</label><select id="usageType" class="input-modern w-full px-4 py-3 rounded-xl bg-white"><option>Kegunaan Dalaman</option><option>Kegunaan Luar</option></select></div>
+                                    <div class="md:col-span-1"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tujuan</label><textarea id="usageDetails" rows="1" class="input-modern w-full px-4 py-3 rounded-xl bg-white"></textarea></div>
                                 </div>
-                                <button type="button" onclick="Loan.submit()" class="btn-hover w-full bg-indigo-600 text-white font-extrabold py-5 rounded-2xl">Sahkan Pinjaman</button>
+                                <button type="button" onclick="Loan.submit()" class="btn-hover w-full bg-indigo-600 text-white font-extrabold py-4 rounded-xl">Sahkan Pinjaman</button>
                             </form>
                         </div>
 
                         <div id="loan-return-section" class="hidden-section text-center max-w-2xl mx-auto">
-                            <h3 class="text-xl font-extrabold text-slate-800 mb-2">Proses Pemulangan</h3>
-                            <select id="returnSelect" class="input-modern w-full px-6 py-4 rounded-2xl mb-8 shadow-xl bg-white font-bold"></select>
+                            <h3 class="text-xl font-bold mb-4">Proses Pemulangan</h3>
+                            <select id="returnSelect" class="input-modern w-full px-6 py-4 rounded-2xl mb-6 bg-white font-bold text-lg"></select>
                             <button onclick="Loan.submitReturn()" class="btn-hover bg-emerald-600 text-white font-extrabold py-4 px-12 rounded-2xl w-full">Sahkan Pulangan</button>
                         </div>
 
                         <div id="loan-admin-section" class="hidden-section">
-                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                                <div class="lg:col-span-4 space-y-6">
-                                    <div class="border border-slate-100 p-6 rounded-3xl bg-white shadow-sm space-y-4">
-                                        <h6 class="font-extrabold text-xs uppercase">Daftar Aset</h6>
-                                        <input id="newTag" class="input-modern w-full p-2 rounded text-xs" placeholder="Tag">
-                                        <input id="newType" class="input-modern w-full p-2 rounded text-xs" placeholder="Model">
-                                        <input id="newSerial" class="input-modern w-full p-2 rounded text-xs" placeholder="Serial">
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div class="lg:col-span-4 space-y-4">
+                                    <div class="bg-white border p-4 rounded-xl shadow-sm">
+                                        <h6 class="font-bold text-xs uppercase mb-2">Daftar Aset Baru</h6>
+                                        <input id="newTag" class="input-modern w-full p-2 mb-2 rounded text-xs uppercase" placeholder="Tag Aset">
+                                        <input id="newType" class="input-modern w-full p-2 mb-2 rounded text-xs" placeholder="Model">
+                                        <input id="newSerial" class="input-modern w-full p-2 mb-2 rounded text-xs" placeholder="Serial Number">
                                         <button onclick="Loan.addDevice()" class="w-full bg-indigo-500 text-white py-2 rounded font-bold text-xs">Simpan</button>
                                     </div>
                                 </div>
-                                <div class="lg:col-span-8 card-modern overflow-hidden">
-                                    <div class="p-6 bg-slate-50 border-b border-slate-100"><h6 class="font-extrabold text-xs uppercase">Status Aktif</h6></div>
-                                    <div class="table-container m-0"><table class="w-full"><tbody id="active-loans-body"></tbody></table></div>
+                                <div class="lg:col-span-8">
+                                    <div class="table-container shadow-sm"><table class="w-full"><thead class="bg-slate-50 text-[10px] uppercase font-bold"><tr><th class="text-left p-3">Nama</th><th class="text-left p-3">Tag</th><th class="text-left p-3">Due Date</th><th class="text-left p-3">Tujuan</th></tr></thead><tbody id="active-loans-body" class="text-xs"></tbody></table></div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div id="loan-history-section" class="hidden-section">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-lg">Arkib Rekod Pinjaman</h3>
+                                <button onclick="Loan.exportExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Export Excel</button>
+                            </div>
+                            <div class="table-container shadow-sm">
+                                <table id="loan-history-table">
+                                    <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500">
+                                        <tr><th class="text-left p-3">Masa</th><th class="text-left p-3">Peminjam</th><th class="text-left p-3">Tag</th><th class="text-left p-3">Serial</th><th class="text-left p-3">Tarikh</th><th class="text-left p-3">Status</th></tr>
+                                    </thead>
+                                    <tbody id="loan-history-body" class="text-xs text-slate-600"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div id="summary-module" class="hidden-section">
-                    <div class="card-modern p-6 text-center">
-                        <h2 class="text-xl font-black text-slate-800 uppercase mb-8">Statistik</h2>
-                        <div class="w-full max-w-4xl mx-auto mb-12"><canvas id="summaryChart"></canvas></div>
-                    </div>
+            </div>
+
+            <div id="summary-module" class="hidden-section">
+                <div class="card-modern p-6 text-center">
+                    <h2 class="text-xl font-black text-slate-800 uppercase mb-8">Statistik Bulanan</h2>
+                    <div class="w-full max-w-4xl mx-auto mb-8"><canvas id="summaryChart"></canvas></div>
+                    <div class="table-container"><table id="summary-table"><thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500"><tr><th class="p-3 text-center">No</th><th class="p-3 text-left">Perkara</th><th class="p-3 text-center">Total</th></tr></thead><tbody id="summary-table-body" class="text-xs"></tbody></table></div>
                 </div>
             </div>
         </main>
@@ -235,18 +225,11 @@
     <div id="toast" class="fixed bottom-8 right-8 bg-slate-900/95 text-white px-8 py-5 rounded-2xl shadow-2xl opacity-0 transform translate-y-32 transition-all duration-500 z-[100] font-bold"></div>
 
     <script>
-        // ==========================================
-        // 1. CONFIGURATION
-        // ==========================================
+        // ================= CONFIGURATION =================
         const CONFIG = { 
-            // ----------------------------------------------------
-            // 🔴 REPLACE THESE WITH YOUR KEYS FROM SUPABASE DASHBOARD
-            // ----------------------------------------------------
+            // 🔴 PASTE YOUR *ANON* KEY HERE (Start with eyJ...)
             supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
-            
-            // USE THE ANON PUBLIC KEY (Starts with eyJ...)
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI', 
-            
             emailjsKey: '', 
             emailjsServiceID: 'default_service',
             emailjsTemplateID: 'template_overdue' 
@@ -259,7 +242,7 @@
             createEl: (tag, classes, text) => { const el = document.createElement(tag); if (classes) el.className = classes; if (text) el.textContent = text; return el; },
             showToast: (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('opacity-0', 'translate-y-32'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-32'), 3000); },
             enableField: (id) => { const el = document.getElementById(id); if(el) { el.readOnly = false; el.classList.replace('bg-slate-50', 'bg-white'); el.focus(); document.getElementById('btn-update-master').classList.remove('hidden'); el.addEventListener('input', CallLog.checkValidity); }},
-            formatDate: (d) => d ? new Date(d).toLocaleString('ms-MY') : '-',
+            formatDate: (d) => { if(!d) return '-'; const date = new Date(d); return isNaN(date) ? '-' : date.toLocaleString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}); },
             getToday: () => new Date().toISOString().split('T')[0],
             showPage: (pageId) => { ['index-page','login-page','main-page'].forEach(p => document.getElementById(p).classList.add('hidden-section')); document.getElementById(pageId).classList.remove('hidden-section'); }
         };
@@ -267,7 +250,7 @@
         const Auth = {
             init: async () => {
                 try {
-                    const { data: { session }, error } = await sbClient.auth.getSession();
+                    const { data: { session } } = await sbClient.auth.getSession();
                     if (session) Auth.onAuth(session.user);
                     else Utils.showPage('login-page');
                 } catch (e) { Utils.showPage('login-page'); }
@@ -279,17 +262,14 @@
                 if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = error.message; document.getElementById('login-error').classList.remove('hidden'); }
                 else Auth.onAuth(data.user);
             },
-            logout: async () => {
-                try { await sbClient.auth.signOut(); } catch(e){}
-                localStorage.clear();
-                window.location.reload();
-            },
+            logout: async () => { try { await sbClient.auth.signOut(); } catch(e){} localStorage.clear(); window.location.reload(); },
             onAuth: async (user) => {
                 STATE.currentUser = user;
                 document.getElementById('user-display').innerText = user.email;
                 Utils.showPage('main-page');
-                Navigation.switchModule('call-log');
                 CallLog.init();
+                // We load Loan data early to populate dropdowns
+                Loan.loadData();
             }
         };
 
@@ -300,16 +280,10 @@
                 try {
                     const { data } = await sbClient.from('isu').select('*');
                     const def = { komunikasi: ["Email", "Call"], sistem: ["Portal", "ECP"], perkara: ["ID Lock", "System Error"] };
-                    
                     const dbKom = data ? [...new Set(data.map(i => i.komunikasi).filter(Boolean))] : [];
                     const dbSis = data ? [...new Set(data.map(i => i.sistem).filter(Boolean))] : [];
                     const dbPer = data ? [...new Set(data.map(i => i.perkara).filter(Boolean))] : [];
-
-                    CallLog.options = {
-                        komunikasi: dbKom.length ? dbKom : def.komunikasi,
-                        sistem: dbSis.length ? dbSis : def.sistem,
-                        perkara: dbPer.length ? dbPer : def.perkara
-                    };
+                    CallLog.options = { komunikasi: dbKom.length ? dbKom : def.komunikasi, sistem: dbSis.length ? dbSis : def.sistem, perkara: dbPer.length ? dbPer : def.perkara };
                     CallLog.renderOptions();
                 } catch(e) { console.log(e); }
             },
@@ -319,18 +293,13 @@
                     list.forEach(v => {
                         const l = Utils.createEl('label', "flex items-center gap-2 p-2 bg-white border rounded cursor-pointer text-xs");
                         const i = Utils.createEl('input', "accent-indigo-600"); i.type='radio'; i.name=name; i.value=v; i.onchange=CallLog.checkValidity;
-                        l.append(i, Utils.createEl('span', '', v));
-                        con.appendChild(l);
+                        l.append(i, Utils.createEl('span', '', v)); con.appendChild(l);
                     });
                 };
                 renderRadio('container-komunikasi', CallLog.options.komunikasi, 'komunikasi');
                 renderRadio('container-sistem', CallLog.options.sistem, 'system_type');
-                
-                const sel = document.getElementById('issue-dropdown'); 
-                sel.innerHTML = '';
-                sel.appendChild(new Option('-- Pilih --', ''));
-                CallLog.options.perkara.forEach(p => sel.appendChild(new Option(p,p)));
-                sel.onchange = CallLog.checkValidity;
+                const sel = document.getElementById('issue-dropdown'); sel.innerHTML = ''; sel.appendChild(new Option('-- Pilih --', ''));
+                CallLog.options.perkara.forEach(p => sel.appendChild(new Option(p,p))); sel.onchange = CallLog.checkValidity;
             },
             checkValidity: () => {
                 const hasName = !!document.getElementById('nama').value;
@@ -338,98 +307,66 @@
                 const hasIssue = !!document.getElementById('issue-dropdown').value;
                 const btn = document.getElementById('submit-btn');
                 btn.disabled = !(hasName && hasSys && hasIssue);
-                btn.classList.toggle('opacity-50', btn.disabled);
-                btn.classList.toggle('cursor-not-allowed', btn.disabled);
+                btn.classList.toggle('opacity-50', btn.disabled); btn.classList.toggle('cursor-not-allowed', btn.disabled);
             },
-            // --- FIXED SEARCH ---
-// --- FIXED SEARCH FUNCTION ---
             handleSearch: (q) => {
                 const dd = document.getElementById('search-results-dropdown');
                 if (!q || q.length < 2) { dd.classList.add('hidden'); return; }
-                
                 if (STATE.searchTimeout) clearTimeout(STATE.searchTimeout);
-                
                 STATE.searchTimeout = setTimeout(async () => {
-                    dd.classList.remove('hidden'); 
-                    dd.innerHTML = '<div class="p-2 text-xs font-bold text-slate-400">Mencari...</div>';
-                    
-                    // ✅ FIXED: Used Backticks (`) below so ${q} works
-                    const { data, error } = await sbClient
-                        .from('personnel')
-                        .select('*')
-                        .or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%`) 
-                        .limit(7);
-                    
+                    dd.classList.remove('hidden'); dd.innerHTML = 'Searching...';
+                    const { data, error } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%`).limit(5);
                     dd.innerHTML = '';
-                    
-                    if(error) { 
-                        dd.innerHTML = `<div class="p-2 text-red-500 text-xs">Error: ${error.message}</div>`; 
-                        return; 
-                    }
-                    
+                    if(error) { dd.innerHTML = `<div class="p-2 text-red-500 text-xs">Error: ${error.message}</div>`; return; }
                     if(!data || !data.length) {
-                        const btn = Utils.createEl('div', "p-2 text-indigo-600 cursor-pointer font-bold", `+ Rekod Baru "${q}"?`);
-                        btn.onclick = () => CallLog.prepareNew(q);
-                        dd.appendChild(btn);
+                        const btn = Utils.createEl('div', "p-2 text-indigo-600 cursor-pointer font-bold", `+ New "${q}"?`);
+                        btn.onclick = () => CallLog.prepareNew(q); dd.appendChild(btn);
                     } else {
                         data.forEach(p => {
                             const item = Utils.createEl('div', "p-2 border-b cursor-pointer hover:bg-slate-50");
-                            item.innerHTML = `<div class="font-bold text-xs uppercase">${p.nama}</div><div class="text-[10px] text-slate-400 font-bold">${p.ic_number}</div>`;
-                            item.onclick = () => CallLog.fill(p);
-                            dd.appendChild(item);
+                            item.innerHTML = `<div class="font-bold text-xs uppercase">${p.nama}</div><div class="text-[10px] text-slate-400">${p.ic_number}</div>`;
+                            item.onclick = () => CallLog.fill(p); dd.appendChild(item);
                         });
                     }
                 }, 300);
-            },         fill: (p) => {
+            },
+            fill: (p) => {
                 ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(k => {
                     const el = document.getElementById(k);
-                    if(el) { el.value = p[k==='ic'?'ic_number':k] || ''; el.dispatchEvent(new Event('input')); }
+                    if(el) { let val = p[k]; if(k==='ic') val = p.ic_number; el.value = val || ''; el.dispatchEvent(new Event('input')); }
                 });
-                document.getElementById('search-results-dropdown').classList.add('hidden');
-                CallLog.checkValidity();
+                document.getElementById('search-results-dropdown').classList.add('hidden'); CallLog.checkValidity();
             },
             prepareNew: (n) => {
-                document.getElementById('data-form').reset();
-                document.getElementById('nama').value = n.toUpperCase();
+                document.getElementById('data-form').reset(); document.getElementById('nama').value = n.toUpperCase();
                 ['nama','ic','kod_ptj','department','emel','telefon','gred'].forEach(id => Utils.enableField(id));
                 document.getElementById('search-results-dropdown').classList.add('hidden');
+            },
+            updateMasterData: async () => {
+                const p = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, kod_ptj: document.getElementById('kod_ptj').value, department: document.getElementById('department').value, emel: document.getElementById('emel').value, telefon: document.getElementById('telefon').value, gred: document.getElementById('gred').value };
+                const { data: ex } = await sbClient.from('personnel').select('id').eq('ic_number', p.ic_number).maybeSingle();
+                if(ex) await sbClient.from('personnel').update(p).eq('ic_number', p.ic_number); else await sbClient.from('personnel').insert([p]);
+                Utils.showToast("Master Data synced"); document.getElementById('btn-update-master').classList.add('hidden');
             },
             submit: async (e) => {
                 e.preventDefault();
                 const sys = document.querySelector('input[name="system_type"]:checked').value;
                 const kom = document.querySelector('input[name="komunikasi"]:checked').value;
                 const issue = document.getElementById('issue-dropdown').value;
-                
-                const log = {
-                    ic_number: document.getElementById('ic').value,
-                    nama: document.getElementById('nama').value,
-                    department: document.getElementById('department').value,
-                    perekod: STATE.currentUser.email,
-                    sistem: sys, perkara: issue, komunikasi: kom, confirmation: 'TIDAK'
-                };
-                
+                const log = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, department: document.getElementById('department').value, perekod: STATE.currentUser.email, sistem: sys, perkara: issue, komunikasi: kom, confirmation: 'TIDAK' };
                 const { error } = await sbClient.from('rekod').insert([log]);
-                if(error) alert(error.message);
-                else {
-                    Utils.showToast("Rekod disimpan");
-                    document.getElementById('data-form').reset();
-                    CallLog.checkValidity();
-                    Dashboard.refresh();
-                }
+                if(!error) { CallLog.updateMasterData(); Utils.showToast("Rekod disimpan"); document.getElementById('data-form').reset(); CallLog.checkValidity(); Dashboard.refresh(); }
             }
         };
 
         const Records = {
             fetch: async () => {
-                const tb = document.getElementById('records-table-body');
-                tb.innerHTML = 'Loading...';
+                const tb = document.getElementById('records-table-body'); tb.innerHTML = 'Loading...';
                 const { data } = await sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(50);
                 tb.innerHTML = '';
                 data?.forEach(r => {
                     const tr = Utils.createEl('tr', "border-b hover:bg-slate-50");
-                    [Utils.formatDate(r.created_at), r.nama, r.sistem, r.perkara, r.confirmation].forEach(txt => {
-                        tr.appendChild(Utils.createEl('td', 'p-3', txt));
-                    });
+                    [Utils.formatDate(r.created_at), r.nama, r.sistem, r.perkara, r.confirmation].forEach(txt => tr.appendChild(Utils.createEl('td', 'p-3', txt)));
                     tb.appendChild(tr);
                 });
             }
@@ -437,64 +374,107 @@
 
         const Loan = {
             loadData: async () => {
-                const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia');
-                const ds = document.getElementById('deviceSelect'); ds.innerHTML = '';
-                d?.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type}`, i.tag)));
+                // 1. Load Peminjam List
+                const { data: u } = await sbClient.from('user_ba').select('name');
+                const dl = document.getElementById('userList'); if(dl) { dl.innerHTML = ''; u?.forEach(i => dl.appendChild(new Option(i.name))); }
+
+                // 2. Load Inventory Map
+                const { data: allDev } = await sbClient.from('device_inventory').select('tag, serial');
+                STATE.deviceMap = {}; allDev?.forEach(d => STATE.deviceMap[d.tag] = d.serial || '-');
+
+                // 3. Load Available Devices
+                const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia').order('tag');
+                const ds = document.getElementById('deviceSelect'); if(ds) { ds.innerHTML = ''; d?.forEach(i => ds.appendChild(new Option(`${i.tag} - ${i.type}`, i.tag))); }
+
+                // 4. Load Active Loans for Return
+                const { data: ac } = await sbClient.from('rekod_pinjaman').select('device_tag, user_name').eq('status','Active');
+                const rs = document.getElementById('returnSelect'); if(rs) { rs.innerHTML = ''; ac?.forEach(l => rs.appendChild(new Option(`${l.device_tag} - ${l.user_name}`, l.device_tag))); }
+
                 Loan.loadActive();
+                Loan.loadHistory();
             },
             loadActive: async () => {
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
                 const body = document.getElementById('active-loans-body');
+                const today = Utils.getToday();
                 body.innerHTML = '';
                 data?.forEach(l => {
-                    const tr = Utils.createEl('tr', "border-b");
-                    [l.user_name, l.device_tag, '-', l.end_date, l.usage_type].forEach(t => tr.appendChild(Utils.createEl('td', 'p-3', t)));
+                    const isLate = l.end_date < today;
+                    const tr = Utils.createEl('tr', `border-b ${isLate ? 'row-late' : ''}`);
+                    tr.appendChild(Utils.createEl('td', 'p-3 font-bold', l.user_name));
+                    tr.appendChild(Utils.createEl('td', 'p-3 text-indigo-600', l.device_tag));
+                    tr.appendChild(Utils.createEl('td', `p-3 ${isLate?'text-late':''}`, l.end_date));
+                    tr.appendChild(Utils.createEl('td', 'p-3', l.usage_type));
                     body.appendChild(tr);
                 });
             },
+            loadHistory: async () => {
+                const tb = document.getElementById('loan-history-body');
+                if(!tb) return;
+                const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
+                tb.innerHTML = '';
+                data?.forEach(l => {
+                    const sn = STATE.deviceMap[l.device_tag] || '-';
+                    const tr = Utils.createEl('tr', "border-b hover:bg-slate-50");
+                    [Utils.formatDate(l.created_at), l.user_name, l.device_tag, sn, `${l.start_date} -> ${l.end_date}`, l.status].forEach(t => tr.appendChild(Utils.createEl('td', 'p-3', t)));
+                    tb.appendChild(tr);
+                });
+            },
             submit: async () => {
-                const btn = document.querySelector('#loanForm button');
-                btn.textContent = 'Processing...'; btn.disabled = true;
-                const p = {
-                    action: 'LOAN',
-                    user_name: document.getElementById('loanUserName').value,
-                    device_tag: document.getElementById('deviceSelect').value,
-                    start_date: document.getElementById('loanStartDate').value,
-                    end_date: document.getElementById('loanEndDate').value,
-                    usage_type: document.getElementById('usageType').value,
-                    usage_details: document.getElementById('usageDetails').value
-                };
+                const btn = document.querySelector('#loanForm button'); btn.textContent = 'Processing...'; btn.disabled = true;
+                const p = { action: 'LOAN', user_name: document.getElementById('loanUserName').value, device_tag: document.getElementById('deviceSelect').value, start_date: document.getElementById('loanStartDate').value, end_date: document.getElementById('loanEndDate').value, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value };
                 try {
-                    // SECURE: EDGE FUNCTION CALL
                     const { data, error } = await sbClient.functions.invoke('process-loan', { body: p });
                     if(error || (data && data.error)) throw new Error(error?.message || data?.error);
                     Utils.showToast("Success"); document.getElementById('loanForm').reset(); Loan.loadData();
-                } catch(e) { alert(e.message); }
-                finally { btn.textContent = 'Sahkan Pinjaman'; btn.disabled = false; }
+                } catch(e) { alert(e.message); } finally { btn.textContent = 'Sahkan Pinjaman'; btn.disabled = false; }
             },
             submitReturn: async () => {
-                // Implement Return logic using Edge Function...
-                alert("Implement Return Logic Here");
+                const t = document.getElementById('returnSelect').value; if(!t) return;
+                const btn = document.querySelector('#loan-return-section button'); btn.textContent = 'Processing...'; btn.disabled = true;
+                try {
+                    const { data, error } = await sbClient.functions.invoke('process-loan', { body: { action: 'RETURN', device_tag: t } });
+                    if(error || (data && data.error)) throw new Error(error?.message || data?.error);
+                    Utils.showToast("Returned"); Loan.loadData();
+                } catch(e) { alert(e.message); } finally { btn.textContent = 'Sahkan Pulangan'; btn.disabled = false; }
             },
             addDevice: async () => {
-                const t = document.getElementById('newTag').value;
-                const { error } = await sbClient.from('device_inventory').insert([{ tag: t, status: 'Tersedia' }]);
-                if(error) alert(error.message); else { Utils.showToast("Added"); Loan.loadData(); }
+                const t = document.getElementById('newTag').value; const tp = document.getElementById('newType').value; const sn = document.getElementById('newSerial').value;
+                const { error } = await sbClient.from('device_inventory').insert([{ tag: t, type: tp, serial: sn, status: 'Tersedia' }]);
+                if(error) alert(error.message); else { Utils.showToast("Device Added"); Loan.loadData(); }
             }
         };
 
-        const Navigation = {
-            switchModule: (mod) => {
-                ['call-log','loan','summary'].forEach(m => document.getElementById(m+'-module').classList.toggle('hidden-section', m!==mod));
-                if(mod === 'loan') Loan.loadData();
+        const Summary = {
+            init: async () => {
+                const year = new Date().getFullYear();
+                const tb = document.getElementById('summary-table-body'); tb.innerHTML = 'Loading...';
+                try {
+                    const { data: calls } = await sbClient.from('rekod').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
+                    const process = (arr) => { const c = new Array(12).fill(0); arr?.forEach(i => c[new Date(i.created_at).getMonth()]++); return c; };
+                    const c1 = process(calls); const c2 = process(loans);
+                    
+                    tb.innerHTML = '';
+                    const addRow = (no, title, counts) => {
+                        const tr = Utils.createEl('tr', 'border-b hover:bg-slate-50 cursor-pointer');
+                        tr.appendChild(Utils.createEl('td', 'p-3 text-center text-slate-400 font-bold', no));
+                        tr.appendChild(Utils.createEl('td', 'p-3 font-bold', title));
+                        tr.appendChild(Utils.createEl('td', 'p-3 text-center bg-indigo-50 text-indigo-700 font-bold', counts.reduce((a,b)=>a+b,0)));
+                        tr.onclick = () => Summary.renderChart(counts, title);
+                        tb.appendChild(tr);
+                    };
+                    addRow(1, "Call Log", c1); addRow(2, "Loans", c2);
+                    Summary.renderChart(c1, "Call Log");
+                } catch(e) { console.log(e); tb.innerHTML = 'Error loading summary'; }
             },
-            switchSubTab: (mod, tab) => {
-                if(mod === 'call-log') {
-                    document.getElementById('cl-input-section').classList.toggle('hidden-section', tab!=='input');
-                    document.getElementById('cl-records-section').classList.toggle('hidden-section', tab!=='records');
-                } else if(mod === 'loan') {
-                    ['borrow','return','admin','history'].forEach(t => document.getElementById(`loan-${t}-section`).classList.toggle('hidden-section', t!==tab));
-                }
+            renderChart: (data, label) => {
+                const ctx = document.getElementById('summaryChart'); if(window.myChart) window.myChart.destroy();
+                window.myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], datasets: [{ label: label, data: data, backgroundColor: '#4f46e5', borderRadius: 4 }] },
+                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
             }
         };
 
