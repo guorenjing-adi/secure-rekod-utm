@@ -564,10 +564,177 @@
                     });
                 } catch(e) { tb.innerHTML = '<tr><td colspan="10" class="p-10 text-rose-500">History Load Error.</td></tr>'; }
             },
-            exportExcel: async () => { /* Excel logic same as before */ },
-            checkOverdueLoans: async () => { /* Logic same as before */ },
-            addUser: async () => { /* Logic same as before */ },
-            addDevice: async () => { /* Logic same as before */ }
+// REPLACES: exportExcel: async () => { /* Excel logic same as before */ },
+            exportExcel: () => {
+                // 1. Check if data exists
+                if (!Loan.currentHistory || Loan.currentHistory.length === 0) {
+                    Utils.showToast("Tiada data untuk dimuat turun.");
+                    return;
+                }
+
+                // 2. Map the data to match the Table Headers exactly
+                const dataToExport = Loan.currentHistory.map(l => {
+                    // Get Serial Number from the loaded device map
+                    const sn = STATE.deviceMap[l.device_tag] || 'N/A';
+                    
+                    return {
+                        "Masa Rekod": Utils.formatDate(l.created_at),
+                        "Nama Peminjam": l.user_name ? l.user_name.toUpperCase() : '-',
+                        "Tag Aset": l.device_tag,
+                        "No. Siri": sn,
+                        "Tempoh Pinjaman": `${l.start_date} -> ${l.end_date}`,
+                        "Tujuan": l.usage_type,
+                        "Pegawai (Pengeluar)": l.issued_by || '-',
+                        "Pegawai (Penerima)": l.received_by || '-',
+                        "Tarikh Pulang": l.return_date ? Utils.formatDate(l.return_date) : '-',
+                        "Status": l.status
+                    };
+                });
+
+                // 3. specific column widths for better Excel readability
+                const wscols = [
+                    {wch: 22}, // Masa Rekod
+                    {wch: 30}, // Nama Peminjam
+                    {wch: 15}, // Tag Aset
+                    {wch: 15}, // No Siri
+                    {wch: 30}, // Tempoh
+                    {wch: 20}, // Tujuan
+                    {wch: 25}, // Pegawai Pengeluar
+                    {wch: 25}, // Pegawai Penerima
+                    {wch: 22}, // Tarikh Pulang
+                    {wch: 10}  // Status
+                ];
+
+                // 4. Generate the sheet
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+                ws['!cols'] = wscols; // Apply column widths
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sejarah Pinjaman");
+                
+                // 5. Download the file with today's date
+                XLSX.writeFile(wb, `Rekod_Pinjaman_ICT_${Utils.getToday()}.xlsx`);
+            },
+// ... previous Loan functions (loadData, submit, etc.) ...
+
+            // 1. REPLACES: addUser: async () => { /* Logic same as before */ },
+            addUser: async () => {
+                const name = document.getElementById('newUserName').value.trim().toUpperCase();
+                let email = document.getElementById('newUserEmail').value.trim();
+
+                if (!name || !email) {
+                    alert("Sila lengkapkan Nama dan Email.");
+                    return;
+                }
+
+                // Auto-append domain if missing
+                if (!email.includes('@')) email += '@moe.gov.my';
+
+                const btn = document.querySelector('button[onclick="Loan.addUser()"]');
+                const originalText = btn.innerText;
+                btn.innerText = "Saving...";
+                btn.disabled = true;
+
+                try {
+                    // Assumes table name is 'user_ba' based on previous context in Auth.onAuth
+                    const { error } = await sbClient.from('user_ba').insert([{ name: name, emel: email }]);
+                    
+                    if (error) throw error;
+
+                    Utils.showToast("Pengguna berjaya didaftar");
+                    document.getElementById('newUserName').value = '';
+                    document.getElementById('newUserEmail').value = '';
+                    Loan.loadData(); // Refresh the dropdown list
+                } catch (e) {
+                    alert("Ralat: " + e.message);
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            },
+
+            // 2. REPLACES: addDevice: async () => { /* Logic same as before */ }
+            addDevice: async () => {
+                const tag = document.getElementById('newTag').value.trim().toUpperCase();
+                const type = document.getElementById('newType').value.trim();
+                const serial = document.getElementById('newSerial').value.trim();
+
+                if (!tag || !type) {
+                    alert("Sila lengkapkan Tag Aset dan Model.");
+                    return;
+                }
+
+                const btn = document.querySelector('button[onclick="Loan.addDevice()"]');
+                const originalText = btn.innerText;
+                btn.innerText = "Saving...";
+                btn.disabled = true;
+
+                try {
+                    // Assumes table name is 'device_inventory' based on previous context
+                    const { error } = await sbClient.from('device_inventory').insert([{ 
+                        tag: tag, 
+                        type: type, 
+                        serial: serial,
+                        status: 'Tersedia' // Default status
+                    }]);
+
+                    if (error) throw error;
+
+                    Utils.showToast("Aset ditambah ke inventori");
+                    document.getElementById('newTag').value = '';
+                    document.getElementById('newType').value = '';
+                    document.getElementById('newSerial').value = '';
+                    Loan.loadData(); // Refresh the dropdown list
+                } catch (e) {
+                    alert("Ralat: " + e.message);
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            },
+            
+            // 3. Optional: Fix for checkOverdueLoans which was also empty
+            checkOverdueLoans: async (showUi = false) => {
+                try {
+                    const today = Utils.getToday();
+                    const { data, error } = await sbClient.from('rekod_pinjaman')
+                        .select('*')
+                        .eq('status', 'Active')
+                        .lt('end_date', today); // Find dates before today
+
+                    if (error) throw error;
+
+                    const count = data ? data.length : 0;
+                    
+                    if (showUi) {
+                        const modal = document.getElementById('overdue-modal');
+                        const tbody = document.getElementById('overdue-list-body');
+                        tbody.innerHTML = '';
+                        
+                        if (count === 0) {
+                            alert("Tiada pinjaman lewat buat masa ini.");
+                            return;
+                        }
+
+                        data.forEach(item => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="p-4 font-bold">${item.user_name}</td>
+                                <td class="p-4 text-indigo-600 font-bold">${item.device_tag}</td>
+                                <td class="p-4 text-rose-600 font-bold">${item.end_date}</td>
+                                <td class="p-4 text-center"><button class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-[10px] font-bold uppercase">Emel</button></td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                        modal.classList.remove('hidden');
+                    } else {
+                        // Just update a badge notification if you had one (optional)
+                        if(count > 0) Utils.showToast(`${count} Pinjaman Lewat Dikesan`);
+                    }
+                } catch (e) {
+                    console.error("Overdue Check Error:", e);
+                }
+            }
         };
 
         const Summary = {
