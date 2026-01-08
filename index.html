@@ -532,15 +532,103 @@
                     });
                 }
             },
+// 1. GANTIKAN fungsi submit: async () => { ... } dengan ini:
             submit: async () => {
-                const btn = document.querySelector('#loanForm button'); btn.textContent = 'Processing...'; btn.disabled = true;
-                const p = { action: 'LOAN', user_name: document.getElementById('loanUserName').value, device_tag: document.getElementById('deviceSelect').value, start_date: document.getElementById('loanStartDate').value, end_date: document.getElementById('loanEndDate').value, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value };
-                try { const { data, error } = await sbClient.functions.invoke('process-loan', { body: p }); if(error || (data && data.error)) throw new Error(data?.error || error?.message); Utils.showToast("Transaksi Berjaya"); document.getElementById('loanForm').reset(); Loan.loadData(); } catch(e) { alert("Ralat: " + e.message); } finally { btn.textContent = 'Sahkan Pinjaman'; btn.disabled = false; }
+                const btn = document.querySelector('#loanForm button'); 
+                const originalText = btn.innerText; // Simpan teks asal button
+                btn.textContent = 'Processing...'; 
+                btn.disabled = true;
+
+                // Ambil data dari form
+                const p = { 
+                    user_name: document.getElementById('loanUserName').value, 
+                    device_tag: document.getElementById('deviceSelect').value, 
+                    start_date: document.getElementById('loanStartDate').value, 
+                    end_date: document.getElementById('loanEndDate').value, 
+                    usage_type: document.getElementById('usageType').value, 
+                    usage_details: document.getElementById('usageDetails').value 
+                };
+
+                // Validasi asas
+                if(!p.user_name || !p.device_tag || !p.start_date || !p.end_date) {
+                    alert("Sila lengkapkan maklumat wajib (Peminjam, Aset, Tarikh).");
+                    btn.innerText = originalText; 
+                    btn.disabled = false; 
+                    return;
+                }
+
+                try { 
+                    // LANGKAH A: Simpan rekod ke dalam table 'rekod_pinjaman'
+                    const { error: err1 } = await sbClient.from('rekod_pinjaman').insert([{
+                        user_name: p.user_name,
+                        device_tag: p.device_tag,
+                        start_date: p.start_date,
+                        end_date: p.end_date,
+                        usage_type: p.usage_type,
+                        usage_details: p.usage_details,
+                        status: 'Active', // Status pinjaman aktif
+                        issued_by: STATE.currentUser?.email
+                    }]);
+                    
+                    if(err1) throw new Error(err1.message);
+
+                    // LANGKAH B: Kemaskini status aset dalam 'device_inventory' kepada 'Dipinjam'
+                    // Ini supaya ia hilang dari senarai "Peranti Tersedia"
+                    const { error: err2 } = await sbClient.from('device_inventory')
+                        .update({ status: 'Dipinjam' })
+                        .eq('tag', p.device_tag);
+                    
+                    if(err2) throw new Error(err2.message);
+
+                    Utils.showToast("Pinjaman berjaya direkodkan"); 
+                    document.getElementById('loanForm').reset(); 
+                    Loan.loadData(); // Refresh senarai dropdown
+                } catch(e) { 
+                    alert("Ralat Database: " + e.message); 
+                } finally { 
+                    btn.innerText = originalText; // Kembalikan teks asal
+                    btn.disabled = false; 
+                }
             },
+
+            // 2. Sila GANTIKAN juga submitReturn: async () => { ... } untuk elak error sama semasa pemulangan:
             submitReturn: async () => {
-                const t = document.getElementById('returnSelect').value; if(!t) return;
-                const btn = document.querySelector('#loan-return-section button'); btn.textContent = 'Processing...'; btn.disabled = true;
-                try { const { data, error } = await sbClient.functions.invoke('process-loan', { body: { action: 'RETURN', device_tag: t } }); if(error || (data && data.error)) throw new Error(data?.error || error?.message); Utils.showToast("Aset dipulangkan"); Loan.loadData(); } catch(e) { alert("Ralat: " + e.message); } finally { btn.textContent = 'Sahkan Pulangan'; btn.disabled = false; }
+                const t = document.getElementById('returnSelect').value; 
+                if(!t) return;
+                
+                const btn = document.querySelector('#loan-return-section button'); 
+                const originalText = btn.innerText;
+                btn.textContent = 'Processing...'; 
+                btn.disabled = true;
+
+                try { 
+                    // LANGKAH A: Tutup rekod pinjaman (Set status = Returned)
+                    const { error: err1 } = await sbClient.from('rekod_pinjaman')
+                        .update({ 
+                            status: 'Returned', 
+                            return_date: new Date().toISOString().split('T')[0], // Tarikh hari ini
+                            received_by: STATE.currentUser?.email
+                        })
+                        .eq('device_tag', t)
+                        .eq('status', 'Active'); // Pastikan hanya update pinjaman yang aktif
+
+                    if(err1) throw new Error(err1.message);
+
+                    // LANGKAH B: Kemaskini aset menjadi 'Tersedia' semula
+                    const { error: err2 } = await sbClient.from('device_inventory')
+                        .update({ status: 'Tersedia' })
+                        .eq('tag', t);
+
+                    if(err2) throw new Error(err2.message);
+
+                    Utils.showToast("Aset berjaya dipulangkan"); 
+                    Loan.loadData(); // Refresh senarai
+                } catch(e) { 
+                    alert("Ralat Database: " + e.message); 
+                } finally { 
+                    btn.innerText = originalText; 
+                    btn.disabled = false; 
+                }
             },
             loadHistory: async () => {
                 const tb = document.getElementById('loan-history-body'); tb.innerHTML = ''; const loadTr = document.createElement('tr'); loadTr.innerHTML = '<td colspan="10" class="p-16 text-center"><div class="loader mx-auto"></div></td>'; tb.appendChild(loadTr);
