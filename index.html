@@ -418,7 +418,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div class="col-span-full md:col-span-1">
                                         <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Peminjam</label>
-                                        <input type="text" id="loanUserName" name="borrower_name_input_field" list="userList" autocomplete="new-password" class="input-modern w-full px-4 py-3 rounded-xl bg-white font-semibold" placeholder="Taip nama peminjam...">
+                                        <input type="text" id="loanUserName" list="userList" class="input-modern w-full px-4 py-3 rounded-xl bg-white font-semibold" placeholder="Taip nama peminjam...">
                                         <datalist id="userList"></datalist>
                                         <p class="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-widest">* Sila pilih dari senarai atau taip manual jika tiada.</p>
                                     </div>
@@ -805,15 +805,7 @@
                 STATE.currentUser = user;
                 document.getElementById('user-display').innerText = user.email;
                 try {
-                    const { data: users } = await sbClient.from('user_ba').select('*');
-                    users?.forEach(u => { 
-                        const name = u.name || u.nama;
-                        const emel = u.emel || u.email;
-                        if(emel && name) {
-                            STATE.userMap[emel.toLowerCase()] = name; 
-                            STATE.userEmails[name.toUpperCase()] = emel.toLowerCase();
-                        }
-                    });
+                    // Removed user_ba bulk fetch for security
                     Loan.checkOverdueLoans(false); 
                 } catch (err) {}
                 Utils.showPage('main-page');
@@ -1104,9 +1096,9 @@
                             const d2 = Utils.createEl('div', "text-[9px] font-bold text-slate-400 tracking-wider", r.ic_number);
                             td.append(d1, d2);
                         }
-                        else if(col.id === 'perekod') td.textContent = STATE.userMap[r.perekod?.toLowerCase()] || r.perekod?.split('@')[0] || '-';
+                        else if(col.id === 'perekod') td.textContent = r.perekod || '-';
                         else if(col.id === 'updated_at') td.textContent = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-';
-                        else if(col.id === 'updated_by') td.textContent = STATE.userMap[r.status_updated_by?.toLowerCase()] || r.status_updated_by?.split('@')[0] || '-';
+                        else if(col.id === 'updated_by') td.textContent = r.status_updated_by || '-';
                         else if(col.id === 'status') {
                             const sel = document.createElement('select'); 
                             sel.className = `p-1 rounded-lg font-black uppercase text-[9px] tracking-widest ${r.confirmation === 'YA' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`;
@@ -1139,9 +1131,9 @@
                         let val = "";
                         if(col.id === 'created_at') val = Utils.formatDate(r.created_at);
                         else if(col.id === 'nama_ic') val = `${r.nama} (${r.ic_number})`;
-                        else if(col.id === 'perekod') val = STATE.userMap[r.perekod?.toLowerCase()] || r.perekod || '-';
+                        else if(col.id === 'perekod') val = r.perekod || '-';
                         else if(col.id === 'updated_at') val = r.status_updated_at ? Utils.formatDate(r.status_updated_at) : '-';
-                        else if(col.id === 'updated_by') val = STATE.userMap[r.status_updated_by?.toLowerCase()] || r.status_updated_by || '-';
+                        else if(col.id === 'updated_by') val = r.status_updated_by || '-';
                         else if(col.id === 'status') val = r.confirmation || 'TIDAK';
                         else val = r[col.id] || '-';
                         row[col.label] = val;
@@ -1168,17 +1160,14 @@
                         }
                     });
                 }
-                try {
-                    const { data: u } = await sbClient.from('user_ba').select('*');
-                    const dl = document.getElementById('userList'); 
-                    if (dl) {
-                        dl.innerHTML = '';
-                        u?.sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach(i => {
-                            const val = i.name || i.nama;
-                            if (val) { const o = document.createElement('option'); o.value = val; dl.appendChild(o); }
-                        });
-                    }
+                
+                // Set up dynamic user search for Loan form
+                const loanUserInput = document.getElementById('loanUserName');
+                if (loanUserInput) {
+                    loanUserInput.oninput = (e) => Loan.handleUserSearch(e.target.value);
+                }
 
+                try {
                     // Pre-load device map for SN lookups
                     const { data: allDev } = await sbClient.from('device_inventory').select('tag, serial');
                     STATE.deviceMap = {};
@@ -1203,6 +1192,25 @@
                     }
                     Loan.loadActive();
                 } catch (e) {}
+            },
+            handleUserSearch: async (query) => {
+                const datalist = document.getElementById('userList');
+                if (!query || query.length < 2) {
+                    datalist.innerHTML = '';
+                    return;
+                }
+                
+                // Debounce
+                if (this.searchTimeout) clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(async () => {
+                    const { data } = await sbClient.from('user_ba').select('name').ilike('name', `%${query}%`).limit(10);
+                    datalist.innerHTML = '';
+                    data?.forEach(user => {
+                        const opt = document.createElement('option');
+                        opt.value = user.name;
+                        datalist.appendChild(opt);
+                    });
+                }, 300);
             },
             loadActive: async () => {
                 const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
@@ -1314,8 +1322,8 @@
                         const isLate = isLateActive || isLateReturned;
                         const rowClass = isLate ? 'row-late' : 'border-b border-slate-50';
                         const textClass = isLate ? 'text-late' : '';
-                        const opIn = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by?.split('@')[0] || '-';
-                        const opOut = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by?.split('@')[0] || '-';
+                        const opIn = l.issued_by || '-';
+                        const opOut = l.received_by || '-';
                         const sn = STATE.deviceMap[l.device_tag] || '-';
 
                         const tr = Utils.createEl('tr', `${rowClass} hover:bg-slate-50 transition-all`);
@@ -1354,8 +1362,8 @@
             },
             exportExcel: async () => {
                 const formatted = Loan.currentHistory.map(l => {
-                    const opIn = STATE.userMap[l.issued_by?.toLowerCase()] || l.issued_by || '-';
-                    const opOut = STATE.userMap[l.received_by?.toLowerCase()] || l.received_by || '-';
+                    const opIn = l.issued_by || '-';
+                    const opOut = l.received_by || '-';
                     const sn = STATE.deviceMap[l.device_tag] || '-';
                     return {
                         'Masa Rekod': Utils.formatDate(l.created_at),
