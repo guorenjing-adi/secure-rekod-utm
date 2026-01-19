@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Rekod IT UTM | MOE Edition</title>
     
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co; 
+        style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; 
+        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com;
+        connect-src 'self' https://*.supabase.co https://api.emailjs.com;
+    ">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -39,7 +42,6 @@
 
         .hidden-section { display: none !important; }
         
-        /* MODERN TABLE MODES */
         .table-container { 
             width: 100%; 
             overflow-x: auto; 
@@ -53,7 +55,7 @@
         th, td { padding: 0.75rem 1rem; }
         th { background: #f8fafc; font-weight: 600; border-bottom: 2px solid #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 10; }
 
-        /* Mode: WRAP - Show all, bigger font, wrap text */
+        /* Mode: WRAP */
         .wrap-mode table { min-width: 100% !important; table-layout: auto !important; }
         .wrap-mode th, .wrap-mode td { 
             white-space: normal !important; 
@@ -63,7 +65,7 @@
             vertical-align: top;
         }
 
-        /* Mode: COMPACT - Fix: No horizontal scroll, very small font, truncated text */
+        /* Mode: COMPACT */
         .compact-mode .table-container { overflow-x: hidden !important; }
         .compact-mode table { 
             min-width: 100% !important; 
@@ -213,7 +215,6 @@
                     <button type="button" onclick="Auth.toggleForm('login')" class="text-slate-400 text-sm font-bold hover:text-slate-600">Kembali ke Log Masuk</button>
                 </div>
             </form>
-
             <div id="debug-console" class="mt-8"><div>> System ready. Waiting for auth...</div></div>
         </div>
     </div>
@@ -264,7 +265,6 @@
         </nav>
 
         <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
-            
             <div id="call-log-module" class="w-full space-y-4 md:space-y-6">
                 <div id="it-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
                     <div class="card-modern p-3 border-l-4 border-l-indigo-500 bg-white">
@@ -820,9 +820,10 @@
         const CONFIG = { 
             supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI',
-            emailjsKey: '', 
-            emailjsServiceID: 'default_service',
-            emailjsTemplateID: 'template_overdue' 
+            // SECURE UPDATE: Email keys removed. Use Edge Function.
+            emailjsKey: null,
+            emailjsServiceID: null,
+            emailjsTemplateID: null
         };
 
         const STATE = { currentUser: null, searchTimeout: null, baseFontSize: 16, userMap: {}, userEmails: {}, currentViewMode: 'default', deviceMap: {} };
@@ -837,6 +838,16 @@
                     c.appendChild(div);
                     c.scrollTop = c.scrollHeight; 
                 }
+            },
+            // SECURITY: Strong HTML escaping for any remaining raw output
+            escapeHTML: (str) => {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
             },
             showToast: (msg) => { 
                 const t = document.getElementById('toast'); 
@@ -883,9 +894,8 @@
 
         const EmailService = {
             init: () => {
-                if (CONFIG.emailjsKey) {
-                    emailjs.init(CONFIG.emailjsKey);
-                }
+                // EmailJS SDK initialization removed for security.
+                // Logic moved to sendNoReply using Edge Function.
             },
             sendNoReply: async (toEmail, toName, message) => {
                 let finalEmail = toEmail;
@@ -893,23 +903,30 @@
                     finalEmail = `${finalEmail.trim()}@moe.gov.my`;
                 }
 
-                if (!CONFIG.emailjsKey) {
+                try {
+                    // SECURE UPDATE: Call Supabase Edge Function 'send-email'
+                    // This prevents exposing API keys in client-side HTML.
+                    const { data, error } = await sbClient.functions.invoke('send-email', {
+                        body: {
+                            to_email: finalEmail,
+                            to_name: toName,
+                            message: message,
+                            subject: "Peringatan Mesra: Pemulangan Aset IT"
+                        }
+                    });
+
+                    if (error) {
+                        console.error("Email Edge Function Error:", error);
+                        throw new Error("Gagal menghantar emel.");
+                    }
+                    return { status: 'sent', data };
+                } catch (err) {
+                    // Fallback to mailto if Edge Function fails or isn't deployed yet
+                    console.warn("Falling back to mailto link");
                     const subject = encodeURIComponent("Peringatan Mesra: Pemulangan Aset IT");
                     const body = encodeURIComponent(message);
                     window.location.href = `mailto:${finalEmail}?subject=${subject}&body=${body}`;
                     return { status: 'bridged' };
-                }
-                
-                try {
-                    return await emailjs.send(CONFIG.emailjsServiceID, CONFIG.emailjsTemplateID, {
-                        to_email: finalEmail,
-                        to_name: toName,
-                        system_signature: "Unit Teknologi Maklumat (Auto-Alert)",
-                        message: message,
-                        reply_to: "no-reply@moe.gov.my" 
-                    });
-                } catch (err) {
-                    throw err;
                 }
             }
         };
@@ -1071,7 +1088,6 @@
             }
         };
 
-        // --- UPDATED ASSETS LOGIC USING MAIN DB AND CSV COLUMNS ---
         const Assets = {
             allData: [],
             filteredData: [],
@@ -1084,14 +1100,13 @@
                 const tbody = document.getElementById('asset-table-body');
                 tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
 
-                // Use the main client, select all columns, order by created_at (as ID might be missing or UUID)
                 const { data, error } = await sbClient
                     .from('aset')
                     .select('*')
                     .order('created_at', { ascending: true });
 
                 if (error) {
-                    tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Error: ${error.message}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
                 } else {
                     Assets.allData = data || [];
                     Assets.filteredData = Assets.allData;
@@ -1112,6 +1127,7 @@
                 Assets.showAllRows = true; 
                 Assets.renderTable();
             },
+            // SECURITY CRITICAL: DOM creation instead of innerHTML
             renderTable: () => {
                 const tbody = document.getElementById('asset-table-body');
                 tbody.innerHTML = "";
@@ -1139,31 +1155,52 @@
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
                     
-                    const safeHTML = (text) => text ? text.toString() : '-';
-                    const getStatusClass = (status) => {
-                        if(status === 'Baharu' || status === 'BAHARU') return 'bg-emerald-100 text-emerald-800';
-                        if(status === 'Dalam Keadaan Baik') return 'bg-indigo-100 text-indigo-800';
-                        if(status === 'Perlu Dibaiki' || status === 'PERLU DIBAIKI') return 'bg-amber-100 text-amber-800';
-                        if(status === 'Perlu Disemak') return 'bg-blue-100 text-blue-800';
-                        if(status === 'Dalam Proses Pelupusan') return 'bg-rose-100 text-rose-800';
-                        return 'bg-slate-100 text-slate-600';
+                    const createCell = (text, className) => {
+                        const td = document.createElement('td');
+                        td.className = className || "p-4";
+                        td.innerText = text || '-';
+                        return td;
                     };
 
-                    // Use row.uuid for the edit action, and index+1 for display ID
-                    tr.innerHTML = `
-                        <td class="p-4 font-bold text-slate-700">${index + 1}</td>
-                        <td class="p-4 font-bold text-slate-800 uppercase">${safeHTML(row.nama_pengguna)}</td>
-                        <td class="p-4">${safeHTML(row.jenis_aset)}</td>
-                        <td class="p-4">${safeHTML(row.seksyen)}</td>
-                        <td class="p-4 text-slate-500 font-mono">${safeHTML(row.no_dhm)}</td>
-                        <td class="p-4 text-slate-500 font-mono">${safeHTML(row.no_siri)}</td>
-                        <td class="p-4">${safeHTML(row.model)}</td>
-                        <td class="p-4"><span class="px-2 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider ${getStatusClass(row.status)}">${safeHTML(row.status)}</span></td>
-                        <td class="p-4 text-slate-400">${safeHTML(row.pengguna_terdahulu)}</td>
-                        <td class="p-4 text-center">
-                            <button class="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all" onclick="Assets.showEditForm('${row.uuid}')">Edit</button>
-                        </td>
-                    `;
+                    tr.appendChild(createCell(index + 1, "p-4 font-bold text-slate-700"));
+                    tr.appendChild(createCell(row.nama_pengguna, "p-4 font-bold text-slate-800 uppercase"));
+                    tr.appendChild(createCell(row.jenis_aset));
+                    tr.appendChild(createCell(row.seksyen));
+                    tr.appendChild(createCell(row.no_dhm, "p-4 text-slate-500 font-mono"));
+                    tr.appendChild(createCell(row.no_siri, "p-4 text-slate-500 font-mono"));
+                    tr.appendChild(createCell(row.model));
+
+                    // Status Cell
+                    const tdStatus = document.createElement('td');
+                    tdStatus.className = "p-4";
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = "px-2 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider";
+                    
+                    let statusClass = 'bg-slate-100 text-slate-600';
+                    const s = row.status;
+                    if(s === 'Baharu' || s === 'BAHARU') statusClass = 'bg-emerald-100 text-emerald-800';
+                    else if(s === 'Dalam Keadaan Baik') statusClass = 'bg-indigo-100 text-indigo-800';
+                    else if(s === 'Perlu Dibaiki' || s === 'PERLU DIBAIKI') statusClass = 'bg-amber-100 text-amber-800';
+                    else if(s === 'Perlu Disemak') statusClass = 'bg-blue-100 text-blue-800';
+                    else if(s === 'Dalam Proses Pelupusan') statusClass = 'bg-rose-100 text-rose-800';
+                    
+                    statusSpan.className += ` ${statusClass}`;
+                    statusSpan.innerText = s || '-';
+                    tdStatus.appendChild(statusSpan);
+                    tr.appendChild(tdStatus);
+
+                    tr.appendChild(createCell(row.pengguna_terdahulu, "p-4 text-slate-400"));
+
+                    // Action Cell
+                    const tdAction = document.createElement('td');
+                    tdAction.className = "p-4 text-center";
+                    const btn = document.createElement('button');
+                    btn.className = "bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all";
+                    btn.innerText = "Edit";
+                    btn.onclick = () => Assets.showEditForm(row.uuid);
+                    tdAction.appendChild(btn);
+                    tr.appendChild(tdAction);
+
                     tbody.appendChild(tr);
                 });
             },
