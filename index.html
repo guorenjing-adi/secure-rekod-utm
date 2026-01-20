@@ -605,26 +605,25 @@
 
             <div id="assets-module" class="hidden-section w-full space-y-4 md:space-y-6">
                 <div class="card-modern p-1">
-<div class="p-6 md:p-8 border-b border-slate-50 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-4">
-        </div>
-    
-    <div class="flex gap-2">
-        <button onclick="Assets.exportExcel()" class="btn-hover bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide flex items-center gap-2">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export
-        </button>
-        <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
-        </button>
-    </div>
-    </div>
+                    <div class="p-6 md:p-8 border-b border-slate-50 flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+                                <i data-lucide="hard-drive" class="w-6 h-6"></i>
+                            </div>
+                            <div>
                                 <h2 class="text-lg md:text-xl font-extrabold text-slate-800 tracking-tight">Sistem Pengurusan Aset ICT</h2>
                                 <p class="text-slate-400 text-xs md:text-sm font-medium">Pengkalan data aset dan peralatan ICT</p>
                             </div>
                         </div>
-                        <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
-                        </button>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="Assets.exportExcel()" class="btn-hover bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide flex items-center gap-2">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export
+                            </button>
+                            <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
+                            </button>
+                        </div>
                     </div>
 
                     <div class="p-4 bg-white border-b border-slate-50">
@@ -638,22 +637,22 @@
                     <div class="p-0">
                         <div class="table-container m-0 border-none rounded-none max-h-[70vh] overflow-y-auto">
                             <table id="asset-main-table" class="data-table w-full">
-<thead class="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[10px] md:text-xs border-b border-slate-100">
-    <tr>
-        <th class="p-4 text-left">Bil</th>
-        <th class="p-4 text-left">Nama Pengguna</th>
-        <th class="p-4 text-left">Jenis Aset</th>
-        <th class="p-4 text-left">Seksyen</th>
-        <th class="p-4 text-left">No. DHM</th>
-        <th class="p-4 text-left">No. Siri</th>
-        <th class="p-4 text-left">Model</th>
-        <th class="p-4 text-left">Status</th>
-        <th class="p-4 text-left">Pengguna Dahulu</th>
-        <th class="p-4 text-left">Dikemaskini Oleh</th>
-        <th class="p-4 text-left">Tarikh Kemaskini</th>
-        <th class="p-4 text-center">Tindakan</th>
-    </tr>
-</thead>
+                                <thead class="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[10px] md:text-xs border-b border-slate-100">
+                                    <tr>
+                                        <th class="p-4 text-left">Bil</th>
+                                        <th class="p-4 text-left">Nama Pengguna</th>
+                                        <th class="p-4 text-left">Jenis Aset</th>
+                                        <th class="p-4 text-left">Seksyen</th>
+                                        <th class="p-4 text-left">No. DHM</th>
+                                        <th class="p-4 text-left">No. Siri</th>
+                                        <th class="p-4 text-left">Model</th>
+                                        <th class="p-4 text-left">Status</th>
+                                        <th class="p-4 text-left">Pengguna Dahulu</th>
+                                        <th class="p-4 text-left">Dikemaskini Oleh</th>
+                                        <th class="p-4 text-left">Tarikh Kemaskini</th>
+                                        <th class="p-4 text-center">Tindakan</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="asset-table-body" class="text-slate-600 text-[10px] md:text-xs font-medium"></tbody>
                             </table>
                         </div>
@@ -829,7 +828,6 @@
         const CONFIG = { 
             supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI',
-            // SECURE UPDATE: Email keys removed. Use Edge Function.
             emailjsKey: null,
             emailjsServiceID: null,
             emailjsTemplateID: null
@@ -848,7 +846,6 @@
                     c.scrollTop = c.scrollHeight; 
                 }
             },
-            // SECURITY: Strong HTML escaping for any remaining raw output
             escapeHTML: (str) => {
                 if (!str) return '';
                 return String(str)
@@ -860,7 +857,7 @@
             },
             showToast: (msg) => { 
                 const t = document.getElementById('toast'); 
-                t.innerHTML = ''; // Clear existing
+                t.innerHTML = ''; 
                 
                 const icon = document.createElement('i');
                 icon.setAttribute('data-lucide', 'info');
@@ -902,19 +899,13 @@
         };
 
         const EmailService = {
-            init: () => {
-                // EmailJS SDK initialization removed for security.
-                // Logic moved to sendNoReply using Edge Function.
-            },
+            init: () => {},
             sendNoReply: async (toEmail, toName, message) => {
                 let finalEmail = toEmail;
                 if (finalEmail && !finalEmail.includes('@')) {
                     finalEmail = `${finalEmail.trim()}@moe.gov.my`;
                 }
-
                 try {
-                    // SECURE UPDATE: Call Supabase Edge Function 'send-email'
-                    // This prevents exposing API keys in client-side HTML.
                     const { data, error } = await sbClient.functions.invoke('send-email', {
                         body: {
                             to_email: finalEmail,
@@ -923,14 +914,12 @@
                             subject: "Peringatan Mesra: Pemulangan Aset IT"
                         }
                     });
-
                     if (error) {
                         console.error("Email Edge Function Error:", error);
                         throw new Error("Gagal menghantar emel.");
                     }
                     return { status: 'sent', data };
                 } catch (err) {
-                    // Fallback to mailto if Edge Function fails or isn't deployed yet
                     console.warn("Falling back to mailto link");
                     const subject = encodeURIComponent("Peringatan Mesra: Pemulangan Aset IT");
                     const body = encodeURIComponent(message);
@@ -1097,218 +1086,217 @@
             }
         };
 
-const Assets = {
-    allData: [],
-    filteredData: [],
-    showAllRows: false,
-    init: async () => {
-        if (!STATE.currentUser) return;
-        Assets.fetchData();
-    },
-    fetchData: async () => {
-        const tbody = document.getElementById('asset-table-body');
-        tbody.innerHTML = `<tr><td colspan="12" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
+        const Assets = {
+            allData: [],
+            filteredData: [],
+            showAllRows: false,
+            init: async () => {
+                if (!STATE.currentUser) return;
+                Assets.fetchData();
+            },
+            fetchData: async () => {
+                const tbody = document.getElementById('asset-table-body');
+                tbody.innerHTML = `<tr><td colspan="12" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
 
-        const { data, error } = await sbClient
-            .from('aset')
-            .select('*')
-            .order('created_at', { ascending: true });
+                const { data, error } = await sbClient
+                    .from('aset')
+                    .select('*')
+                    .order('created_at', { ascending: true });
 
-        if (error) {
-            tbody.innerHTML = `<tr><td colspan="12" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
-        } else {
-            Assets.allData = data || [];
-            Assets.filteredData = Assets.allData;
-            Assets.renderTable();
-        }
-    },
-    handleSearch: () => {
-        const query = document.getElementById('asset-search-input').value.toLowerCase();
-        if (query === "") {
-            Assets.filteredData = Assets.allData;
-        } else {
-            Assets.filteredData = Assets.allData.filter(row => {
-                return Object.values(row).some(val => 
-                    String(val).toLowerCase().includes(query)
-                );
-            });
-        }
-        Assets.showAllRows = true; 
-        Assets.renderTable();
-    },
-    renderTable: () => {
-        const tbody = document.getElementById('asset-table-body');
-        tbody.innerHTML = "";
-        
-        const isSearching = document.getElementById('asset-search-input').value !== "";
-        let displayData;
-        
-        if (isSearching) {
-            displayData = Assets.filteredData;
-            document.getElementById('btn-asset-show-all').style.display = 'none';
-        } else {
-            displayData = Assets.showAllRows ? Assets.filteredData : Assets.filteredData.slice(0, 5);
-            document.getElementById('btn-asset-show-all').style.display = 'block';
-            document.getElementById('btn-asset-show-all').innerText = Assets.showAllRows ? "Show Less (5 Rows)" : "Show All Rows";
-        }
+                if (error) {
+                    tbody.innerHTML = `<tr><td colspan="12" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
+                } else {
+                    Assets.allData = data || [];
+                    Assets.filteredData = Assets.allData;
+                    Assets.renderTable();
+                }
+            },
+            handleSearch: () => {
+                const query = document.getElementById('asset-search-input').value.toLowerCase();
+                if (query === "") {
+                    Assets.filteredData = Assets.allData;
+                } else {
+                    Assets.filteredData = Assets.allData.filter(row => {
+                        return Object.values(row).some(val => 
+                            String(val).toLowerCase().includes(query)
+                        );
+                    });
+                }
+                Assets.showAllRows = true; 
+                Assets.renderTable();
+            },
+            renderTable: () => {
+                const tbody = document.getElementById('asset-table-body');
+                tbody.innerHTML = "";
+                
+                const isSearching = document.getElementById('asset-search-input').value !== "";
+                let displayData;
+                
+                if (isSearching) {
+                    displayData = Assets.filteredData;
+                    document.getElementById('btn-asset-show-all').style.display = 'none';
+                } else {
+                    displayData = Assets.showAllRows ? Assets.filteredData : Assets.filteredData.slice(0, 5);
+                    document.getElementById('btn-asset-show-all').style.display = 'block';
+                    document.getElementById('btn-asset-show-all').innerText = Assets.showAllRows ? "Show Less (5 Rows)" : "Show All Rows";
+                }
 
-        document.getElementById('asset-record-count').innerText = `${displayData.length}/${Assets.filteredData.length}`;
+                document.getElementById('asset-record-count').innerText = `${displayData.length}/${Assets.filteredData.length}`;
 
-        if (displayData.length === 0) {
-            tbody.innerHTML = "<tr><td colspan='12' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>";
-            return;
-        }
+                if (displayData.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='12' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>";
+                    return;
+                }
 
-        displayData.forEach((row, index) => {
-            const tr = document.createElement('tr');
-            tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
-            
-            const createCell = (text, className) => {
-                const td = document.createElement('td');
-                td.className = className || "p-4";
-                td.innerText = text || '-';
-                return td;
-            };
+                displayData.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
+                    
+                    const createCell = (text, className) => {
+                        const td = document.createElement('td');
+                        td.className = className || "p-4";
+                        td.innerText = text || '-';
+                        return td;
+                    };
 
-            tr.appendChild(createCell(index + 1, "p-4 font-bold text-slate-700"));
-            tr.appendChild(createCell(row.nama_pengguna, "p-4 font-bold text-slate-800 uppercase"));
-            tr.appendChild(createCell(row.jenis_aset));
-            tr.appendChild(createCell(row.seksyen));
-            tr.appendChild(createCell(row.no_dhm, "p-4 text-slate-500 font-mono"));
-            tr.appendChild(createCell(row.no_siri, "p-4 text-slate-500 font-mono"));
-            tr.appendChild(createCell(row.model));
+                    tr.appendChild(createCell(index + 1, "p-4 font-bold text-slate-700"));
+                    tr.appendChild(createCell(row.nama_pengguna, "p-4 font-bold text-slate-800 uppercase"));
+                    tr.appendChild(createCell(row.jenis_aset));
+                    tr.appendChild(createCell(row.seksyen));
+                    tr.appendChild(createCell(row.no_dhm, "p-4 text-slate-500 font-mono"));
+                    tr.appendChild(createCell(row.no_siri, "p-4 text-slate-500 font-mono"));
+                    tr.appendChild(createCell(row.model));
 
-            // Status Cell
-            const tdStatus = document.createElement('td');
-            tdStatus.className = "p-4";
-            const statusSpan = document.createElement('span');
-            statusSpan.className = "px-2 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider";
-            
-            let statusClass = 'bg-slate-100 text-slate-600';
-            const s = row.status;
-            if(s === 'Baharu' || s === 'BAHARU') statusClass = 'bg-emerald-100 text-emerald-800';
-            else if(s === 'Dalam Keadaan Baik') statusClass = 'bg-indigo-100 text-indigo-800';
-            else if(s === 'Perlu Dibaiki' || s === 'PERLU DIBAIKI') statusClass = 'bg-amber-100 text-amber-800';
-            else if(s === 'Perlu Disemak') statusClass = 'bg-blue-100 text-blue-800';
-            else if(s === 'Dalam Proses Pelupusan') statusClass = 'bg-rose-100 text-rose-800';
-            
-            statusSpan.className += ` ${statusClass}`;
-            statusSpan.innerText = s || '-';
-            tdStatus.appendChild(statusSpan);
-            tr.appendChild(tdStatus);
+                    // Status Cell
+                    const tdStatus = document.createElement('td');
+                    tdStatus.className = "p-4";
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = "px-2 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider";
+                    
+                    let statusClass = 'bg-slate-100 text-slate-600';
+                    const s = row.status;
+                    if(s === 'Baharu' || s === 'BAHARU') statusClass = 'bg-emerald-100 text-emerald-800';
+                    else if(s === 'Dalam Keadaan Baik') statusClass = 'bg-indigo-100 text-indigo-800';
+                    else if(s === 'Perlu Dibaiki' || s === 'PERLU DIBAIKI') statusClass = 'bg-amber-100 text-amber-800';
+                    else if(s === 'Perlu Disemak') statusClass = 'bg-blue-100 text-blue-800';
+                    else if(s === 'Dalam Proses Pelupusan') statusClass = 'bg-rose-100 text-rose-800';
+                    
+                    statusSpan.className += ` ${statusClass}`;
+                    statusSpan.innerText = s || '-';
+                    tdStatus.appendChild(statusSpan);
+                    tr.appendChild(tdStatus);
 
-            tr.appendChild(createCell(row.pengguna_terdahulu, "p-4 text-slate-400"));
+                    tr.appendChild(createCell(row.pengguna_terdahulu, "p-4 text-slate-400"));
 
-            // --- NEW COLUMNS RENDER ---
-            // Dikemaskini Oleh
-            const editorName = row.editor ? (STATE.userMap[row.editor.toLowerCase()] || row.editor) : '-';
-            tr.appendChild(createCell(editorName, "p-4 text-xs text-slate-500 font-medium"));
+                    // --- NEW COLUMNS RENDER ---
+                    const editorName = row.editor ? (STATE.userMap[row.editor.toLowerCase()] || row.editor) : '-';
+                    tr.appendChild(createCell(editorName, "p-4 text-xs text-slate-500 font-medium"));
 
-            // Tarikh Kemaskini
-            const dateStr = row.last_updated ? Utils.formatDate(row.last_updated) : '-';
-            tr.appendChild(createCell(dateStr, "p-4 text-xs text-slate-500"));
-            // --------------------------
+                    const dateStr = row.last_updated ? Utils.formatDate(row.last_updated) : '-';
+                    tr.appendChild(createCell(dateStr, "p-4 text-xs text-slate-500"));
+                    // --------------------------
 
-            // Action Cell
-            const tdAction = document.createElement('td');
-            tdAction.className = "p-4 text-center";
-            const btn = document.createElement('button');
-            btn.className = "bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all";
-            btn.innerText = "Edit";
-            btn.onclick = () => Assets.showEditForm(row.uuid);
-            tdAction.appendChild(btn);
-            tr.appendChild(tdAction);
+                    // Action Cell
+                    const tdAction = document.createElement('td');
+                    tdAction.className = "p-4 text-center";
+                    const btn = document.createElement('button');
+                    btn.className = "bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all";
+                    btn.innerText = "Edit";
+                    btn.onclick = () => Assets.showEditForm(row.uuid);
+                    tdAction.appendChild(btn);
+                    tr.appendChild(tdAction);
 
-            tbody.appendChild(tr);
-        });
-    },
-    exportExcel: () => {
-        const formatted = Assets.filteredData.map((r, index) => {
-            return {
-                'Bil': index + 1,
-                'Nama Pengguna': r.nama_pengguna || '-',
-                'Jenis Aset': r.jenis_aset || '-',
-                'Seksyen': r.seksyen || '-',
-                'No. DHM': r.no_dhm || '-',
-                'No. Siri': r.no_siri || '-',
-                'Model': r.model || '-',
-                'Status': r.status || '-',
-                'Pengguna Terdahulu': r.pengguna_terdahulu || '-',
-                'Dikemaskini Oleh': r.editor ? (STATE.userMap[r.editor.toLowerCase()] || r.editor) : '-',
-                'Tarikh Kemaskini': r.last_updated ? Utils.formatDate(r.last_updated) : '-'
-            };
-        });
-        const ws = XLSX.utils.json_to_sheet(formatted);
-        const wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "Senarai Aset ICT");
-        XLSX.writeFile(wb, "Senarai_Aset_ICT.xlsx");
-    },
-    toggleShowAll: () => {
-        Assets.showAllRows = !Assets.showAllRows;
-        Assets.renderTable();
-    },
-    toggleForm: (show) => {
-        const overlay = document.getElementById('asset-form-overlay');
-        if (show) {
-            document.getElementById('asset-form-title').innerText = "Tambah Aset Baharu";
-            document.getElementById('asset-form').reset();
-            document.getElementById('asset-id').value = ""; 
-            overlay.classList.remove('hidden');
-        } else {
-            overlay.classList.add('hidden');
-        }
-    },
-    showEditForm: (uuid) => {
-        const row = Assets.allData.find(r => r.uuid === uuid);
-        if (!row) return;
+                    tbody.appendChild(tr);
+                });
+            },
+            exportExcel: () => {
+                const formatted = Assets.filteredData.map((r, index) => {
+                    return {
+                        'Bil': index + 1,
+                        'Nama Pengguna': r.nama_pengguna || '-',
+                        'Jenis Aset': r.jenis_aset || '-',
+                        'Seksyen': r.seksyen || '-',
+                        'No. DHM': r.no_dhm || '-',
+                        'No. Siri': r.no_siri || '-',
+                        'Model': r.model || '-',
+                        'Status': r.status || '-',
+                        'Pengguna Terdahulu': r.pengguna_terdahulu || '-',
+                        'Dikemaskini Oleh': r.editor ? (STATE.userMap[r.editor.toLowerCase()] || r.editor) : '-',
+                        'Tarikh Kemaskini': r.last_updated ? Utils.formatDate(r.last_updated) : '-'
+                    };
+                });
+                const ws = XLSX.utils.json_to_sheet(formatted);
+                const wb = XLSX.utils.book_new(); 
+                XLSX.utils.book_append_sheet(wb, ws, "Senarai Aset ICT");
+                XLSX.writeFile(wb, "Senarai_Aset_ICT.xlsx");
+            },
+            toggleShowAll: () => {
+                Assets.showAllRows = !Assets.showAllRows;
+                Assets.renderTable();
+            },
+            toggleForm: (show) => {
+                const overlay = document.getElementById('asset-form-overlay');
+                if (show) {
+                    document.getElementById('asset-form-title').innerText = "Tambah Aset Baharu";
+                    document.getElementById('asset-form').reset();
+                    document.getElementById('asset-id').value = ""; 
+                    overlay.classList.remove('hidden');
+                } else {
+                    overlay.classList.add('hidden');
+                }
+            },
+            showEditForm: (uuid) => {
+                const row = Assets.allData.find(r => r.uuid === uuid);
+                if (!row) return;
 
-        document.getElementById('asset-form-title').innerText = "Kemaskini Rekod";
-        document.getElementById('asset-id').value = row.uuid;
-        document.getElementById('inp-nama').value = row.nama_pengguna || '';
-        document.getElementById('inp-jenis').value = row.jenis_aset || '';
-        document.getElementById('inp-seksyen').value = row.seksyen || '';
-        document.getElementById('inp-dhm').value = row.no_dhm || '';
-        document.getElementById('inp-siri').value = row.no_siri || '';
-        document.getElementById('inp-model').value = row.model || '';
-        document.getElementById('inp-status').value = row.status || '';
-        document.getElementById('inp-prevUser').value = row.pengguna_terdahulu || '';
+                document.getElementById('asset-form-title').innerText = "Kemaskini Rekod";
+                document.getElementById('asset-id').value = row.uuid;
+                document.getElementById('inp-nama').value = row.nama_pengguna || '';
+                document.getElementById('inp-jenis').value = row.jenis_aset || '';
+                document.getElementById('inp-seksyen').value = row.seksyen || '';
+                document.getElementById('inp-dhm').value = row.no_dhm || '';
+                document.getElementById('inp-siri').value = row.no_siri || '';
+                document.getElementById('inp-model').value = row.model || '';
+                document.getElementById('inp-status').value = row.status || '';
+                document.getElementById('inp-prevUser').value = row.pengguna_terdahulu || '';
 
-        document.getElementById('asset-form-overlay').classList.remove('hidden');
-    },
-    handleSubmit: async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('asset-id').value;
-        const payload = {
-            nama_pengguna: document.getElementById('inp-nama').value,
-            jenis_aset: document.getElementById('inp-jenis').value,
-            seksyen: document.getElementById('inp-seksyen').value,
-            no_dhm: document.getElementById('inp-dhm').value,
-            no_siri: document.getElementById('inp-siri').value,
-            model: document.getElementById('inp-model').value,
-            status: document.getElementById('inp-status').value,
-            pengguna_terdahulu: document.getElementById('inp-prevUser').value,
-            editor: STATE.currentUser.email,
-            last_updated: new Date()
+                document.getElementById('asset-form-overlay').classList.remove('hidden');
+            },
+            handleSubmit: async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('asset-id').value;
+                const payload = {
+                    nama_pengguna: document.getElementById('inp-nama').value,
+                    jenis_aset: document.getElementById('inp-jenis').value,
+                    seksyen: document.getElementById('inp-seksyen').value,
+                    no_dhm: document.getElementById('inp-dhm').value,
+                    no_siri: document.getElementById('inp-siri').value,
+                    model: document.getElementById('inp-model').value,
+                    status: document.getElementById('inp-status').value,
+                    pengguna_terdahulu: document.getElementById('inp-prevUser').value,
+                    editor: STATE.currentUser.email,
+                    last_updated: new Date()
+                };
+
+                let error;
+                if (id) {
+                    const res = await sbClient.from('aset').update(payload).eq('uuid', id);
+                    error = res.error;
+                } else {
+                    const res = await sbClient.from('aset').insert([payload]);
+                    error = res.error;
+                }
+
+                if (error) {
+                    alert("Ralat Simpanan: " + error.message);
+                } else {
+                    Utils.showToast("Data aset berjaya disimpan!");
+                    Assets.fetchData(); 
+                    Assets.toggleForm(false);
+                }
+            }
         };
 
-        let error;
-        if (id) {
-            const res = await sbClient.from('aset').update(payload).eq('uuid', id);
-            error = res.error;
-        } else {
-            const res = await sbClient.from('aset').insert([payload]);
-            error = res.error;
-        }
-
-        if (error) {
-            alert("Ralat Simpanan: " + error.message);
-        } else {
-            Utils.showToast("Data aset berjaya disimpan!");
-            Assets.fetchData(); 
-            Assets.toggleForm(false);
-        }
-    }
-};
         const CallLog = {
             options: { komunikasi: [], sistem: [], perkara: [] },
             init: async () => {
@@ -1404,7 +1392,7 @@ const Assets = {
                     dd.appendChild(loadingDiv);
 
                     const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(8);
-                    dd.innerHTML = ''; // Clear loading
+                    dd.innerHTML = ''; 
                     
                     if (!data || data.length === 0) {
                         const addNew = document.createElement('div');
@@ -1633,7 +1621,6 @@ const Assets = {
                         });
                     }
 
-                    // Pre-load device map for SN lookups
                     const { data: allDev } = await sbClient.from('device_inventory').select('tag, serial');
                     STATE.deviceMap = {};
                     allDev?.forEach(d => { if(d.tag) STATE.deviceMap[d.tag] = d.serial || 'N/A'; });
@@ -1742,7 +1729,7 @@ const Assets = {
                     const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
                     Loan.currentHistory = data || [];
                     const today = Utils.getToday();
-                    tb.innerHTML = ''; // clear loader
+                    tb.innerHTML = ''; 
                     
                     if (data) {
                         data.forEach(l => {
@@ -1771,7 +1758,6 @@ const Assets = {
                             addTd(l.device_tag, "p-4 text-indigo-600 font-bold");
                             addTd(sn, "p-4 font-medium text-slate-400");
                             
-                            // Tempoh Pinjaman Column with conditional span
                             const tdTempoh = document.createElement('td');
                             tdTempoh.className = `p-4 ${textClass}`;
                             tdTempoh.innerText = `${l.start_date} → ${l.end_date}`;
@@ -1787,7 +1773,6 @@ const Assets = {
                             addTd(opIn, "p-4");
                             addTd(opOut, "p-4");
 
-                            // Tarikh Pulang Column
                             const tdPulang = document.createElement('td');
                             tdPulang.className = `p-4 ${isLateReturned ? 'text-late' : ''}`;
                             tdPulang.innerText = l.return_date ? Utils.formatDate(l.return_date) : '-';
@@ -1911,7 +1896,6 @@ const Assets = {
                 const n = document.getElementById('newUserName').value.trim(); 
                 let e = document.getElementById('newUserEmail').value.trim();
                 if(!n || !e) return;
-               // if (!e.includes('@')) e = `${e}@moe.gov.my`;
                 const finalEmail = e.toLowerCase();
                 try {
                     const { error } = await sbClient.from('user_ba').insert([{ id: crypto.randomUUID(), name: n.toUpperCase(), emel: finalEmail }]); 
@@ -1950,7 +1934,6 @@ const Assets = {
                 tb.appendChild(trLoad);
 
                 try {
-                    // 1. FETCH DATA
                     const { data: calls } = await sbClient.from('rekod')
                         .select('created_at, sistem, komunikasi') 
                         .gte('created_at', `${year}-01-01`)
@@ -1970,7 +1953,6 @@ const Assets = {
                         return counts;
                     };
 
-                    // 2. FILTER LOGIC
                     const solmanItems = calls?.filter(r => 
                         (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || 
                         (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')
@@ -1984,21 +1966,18 @@ const Assets = {
                         r.sistem && r.sistem.includes('AD (DOMAIN)')
                     ) || [];
 
-                    // 3. CALCULATE COUNTS
                     const callCounts = processMonths(calls);
                     const loanCounts = processMonths(loans);
                     const solmanCounts = processMonths(solmanItems);
                     const spmpCounts = processMonths(spmpItems);
                     const adCounts = processMonths(adItems);
                     
-                    // 4. CALCULATE TOTALS
                     const callTotal = callCounts.reduce((a, b) => a + b, 0);
                     const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
                     const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0);
                     const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0);
                     const adTotal = adCounts.reduce((a, b) => a + b, 0);
 
-                    // 5. RENDER ROWS
                     tb.innerHTML = '';
                     
                     const renderRow = (bil, title, counts, total, colorCode = null) => {
@@ -2027,7 +2006,6 @@ const Assets = {
                         tdTotal.innerText = total;
                         tr.appendChild(tdTotal);
                         
-                        // Determine chart color: Purple (Default), Green (Loan), Amber (Solman), Cyan (SPMP), Rose (AD)
                         let chartColor = '#6366f1'; 
                         if (title.includes('Pinjaman')) chartColor = '#10b981';
                         else if (colorCode) chartColor = colorCode;
@@ -2038,11 +2016,10 @@ const Assets = {
 
                     renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal);
                     renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
-                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); // Amber
-                    renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4'); // Cyan
-                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); // Rose
+                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); 
+                    renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4'); 
+                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); 
 
-                    // Default chart load
                     Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
 
                 } catch (e) {
