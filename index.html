@@ -605,12 +605,19 @@
 
             <div id="assets-module" class="hidden-section w-full space-y-4 md:space-y-6">
                 <div class="card-modern p-1">
-                    <div class="p-6 md:p-8 border-b border-slate-50 flex items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-                                <i data-lucide="hard-drive" class="w-6 h-6"></i>
-                            </div>
-                            <div>
+<div class="p-6 md:p-8 border-b border-slate-50 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+        </div>
+    
+    <div class="flex gap-2">
+        <button onclick="Assets.exportExcel()" class="btn-hover bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide flex items-center gap-2">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export
+        </button>
+        <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
+        </button>
+    </div>
+    </div>
                                 <h2 class="text-lg md:text-xl font-extrabold text-slate-800 tracking-tight">Sistem Pengurusan Aset ICT</h2>
                                 <p class="text-slate-400 text-xs md:text-sm font-medium">Pengkalan data aset dan peralatan ICT</p>
                             </div>
