@@ -13,7 +13,7 @@
         img-src 'self' data: blob:;
     ">
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
@@ -616,15 +616,9 @@
                                 <p class="text-slate-400 text-xs md:text-sm font-medium">Pengkalan data aset dan peralatan ICT</p>
                             </div>
                         </div>
-                        
-                        <div class="flex gap-2">
-                            <button onclick="Assets.exportExcel()" class="btn-hover bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide flex items-center gap-2">
-                                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export
-                            </button>
-                            <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
-                                <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
-                            </button>
-                        </div>
+                        <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
+                        </button>
                     </div>
 
                     <div class="p-4 bg-white border-b border-slate-50">
@@ -649,8 +643,6 @@
                                         <th class="p-4 text-left">Model</th>
                                         <th class="p-4 text-left">Status</th>
                                         <th class="p-4 text-left">Pengguna Dahulu</th>
-                                        <th class="p-4 text-left">Dikemaskini Oleh</th>
-                                        <th class="p-4 text-left">Tarikh Kemaskini</th>
                                         <th class="p-4 text-center">Tindakan</th>
                                     </tr>
                                 </thead>
@@ -829,6 +821,7 @@
         const CONFIG = { 
             supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI',
+            // SECURE UPDATE: Email keys removed. Use Edge Function.
             emailjsKey: null,
             emailjsServiceID: null,
             emailjsTemplateID: null
@@ -901,13 +894,19 @@
         };
 
         const EmailService = {
-            init: () => {},
+            init: () => {
+                // EmailJS SDK initialization removed for security.
+                // Logic moved to sendNoReply using Edge Function.
+            },
             sendNoReply: async (toEmail, toName, message) => {
                 let finalEmail = toEmail;
                 if (finalEmail && !finalEmail.includes('@')) {
                     finalEmail = `${finalEmail.trim()}@moe.gov.my`;
                 }
+
                 try {
+                    // SECURE UPDATE: Call Supabase Edge Function 'send-email'
+                    // This prevents exposing API keys in client-side HTML.
                     const { data, error } = await sbClient.functions.invoke('send-email', {
                         body: {
                             to_email: finalEmail,
@@ -916,12 +915,14 @@
                             subject: "Peringatan Mesra: Pemulangan Aset IT"
                         }
                     });
+
                     if (error) {
                         console.error("Email Edge Function Error:", error);
                         throw new Error("Gagal menghantar emel.");
                     }
                     return { status: 'sent', data };
                 } catch (err) {
+                    // Fallback to mailto if Edge Function fails or isn't deployed yet
                     console.warn("Falling back to mailto link");
                     const subject = encodeURIComponent("Peringatan Mesra: Pemulangan Aset IT");
                     const body = encodeURIComponent(message);
@@ -1088,7 +1089,6 @@
             }
         };
 
-        // --- UPDATED ASSETS MODULE WITH SECURITY & NEW FEATURES ---
         const Assets = {
             allData: [],
             filteredData: [],
@@ -1099,7 +1099,7 @@
             },
             fetchData: async () => {
                 const tbody = document.getElementById('asset-table-body');
-                tbody.innerHTML = `<tr><td colspan="12" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
 
                 const { data, error } = await sbClient
                     .from('aset')
@@ -1107,7 +1107,7 @@
                     .order('created_at', { ascending: true });
 
                 if (error) {
-                    tbody.innerHTML = `<tr><td colspan="12" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
                 } else {
                     Assets.allData = data || [];
                     Assets.filteredData = Assets.allData;
@@ -1128,6 +1128,7 @@
                 Assets.showAllRows = true; 
                 Assets.renderTable();
             },
+            // SECURITY CRITICAL: DOM creation instead of innerHTML
             renderTable: () => {
                 const tbody = document.getElementById('asset-table-body');
                 tbody.innerHTML = "";
@@ -1147,7 +1148,7 @@
                 document.getElementById('asset-record-count').innerText = `${displayData.length}/${Assets.filteredData.length}`;
 
                 if (displayData.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan='12' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='10' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>";
                     return;
                 }
 
@@ -1191,14 +1192,6 @@
 
                     tr.appendChild(createCell(row.pengguna_terdahulu, "p-4 text-slate-400"));
 
-                    // --- NEW COLUMNS RENDER (SECURE) ---
-                    const editorName = row.editor ? (STATE.userMap[row.editor.toLowerCase()] || row.editor) : '-';
-                    tr.appendChild(createCell(editorName, "p-4 text-xs text-slate-500 font-medium"));
-
-                    const dateStr = row.last_updated ? Utils.formatDate(row.last_updated) : '-';
-                    tr.appendChild(createCell(dateStr, "p-4 text-xs text-slate-500"));
-                    // -----------------------------------
-
                     // Action Cell
                     const tdAction = document.createElement('td');
                     tdAction.className = "p-4 text-center";
@@ -1211,27 +1204,6 @@
 
                     tbody.appendChild(tr);
                 });
-            },
-            exportExcel: () => {
-                const formatted = Assets.filteredData.map((r, index) => {
-                    return {
-                        'Bil': index + 1,
-                        'Nama Pengguna': r.nama_pengguna || '-',
-                        'Jenis Aset': r.jenis_aset || '-',
-                        'Seksyen': r.seksyen || '-',
-                        'No. DHM': r.no_dhm || '-',
-                        'No. Siri': r.no_siri || '-',
-                        'Model': r.model || '-',
-                        'Status': r.status || '-',
-                        'Pengguna Terdahulu': r.pengguna_terdahulu || '-',
-                        'Dikemaskini Oleh': r.editor ? (STATE.userMap[r.editor.toLowerCase()] || r.editor) : '-',
-                        'Tarikh Kemaskini': r.last_updated ? Utils.formatDate(r.last_updated) : '-'
-                    };
-                });
-                const ws = XLSX.utils.json_to_sheet(formatted);
-                const wb = XLSX.utils.book_new(); 
-                XLSX.utils.book_append_sheet(wb, ws, "Senarai Aset ICT");
-                XLSX.writeFile(wb, "Senarai_Aset_ICT.xlsx");
             },
             toggleShowAll: () => {
                 Assets.showAllRows = !Assets.showAllRows;
@@ -1253,7 +1225,7 @@
                 if (!row) return;
 
                 document.getElementById('asset-form-title').innerText = "Kemaskini Rekod";
-                document.getElementById('asset-id').value = row.uuid;
+                document.getElementById('asset-id').value = row.uuid; // Use UUID here
                 document.getElementById('inp-nama').value = row.nama_pengguna || '';
                 document.getElementById('inp-jenis').value = row.jenis_aset || '';
                 document.getElementById('inp-seksyen').value = row.seksyen || '';
@@ -1283,9 +1255,11 @@
 
                 let error;
                 if (id) {
+                    // Update by UUID
                     const res = await sbClient.from('aset').update(payload).eq('uuid', id);
                     error = res.error;
                 } else {
+                    // Insert
                     const res = await sbClient.from('aset').insert([payload]);
                     error = res.error;
                 }
@@ -1395,7 +1369,7 @@
                     dd.appendChild(loadingDiv);
 
                     const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(8);
-                    dd.innerHTML = ''; 
+                    dd.innerHTML = ''; // Clear loading
                     
                     if (!data || data.length === 0) {
                         const addNew = document.createElement('div');
@@ -1624,6 +1598,7 @@
                         });
                     }
 
+                    // Pre-load device map for SN lookups
                     const { data: allDev } = await sbClient.from('device_inventory').select('tag, serial');
                     STATE.deviceMap = {};
                     allDev?.forEach(d => { if(d.tag) STATE.deviceMap[d.tag] = d.serial || 'N/A'; });
@@ -1732,7 +1707,7 @@
                     const { data } = await sbClient.from('rekod_pinjaman').select('*').order('created_at', {ascending:false});
                     Loan.currentHistory = data || [];
                     const today = Utils.getToday();
-                    tb.innerHTML = ''; 
+                    tb.innerHTML = ''; // clear loader
                     
                     if (data) {
                         data.forEach(l => {
@@ -1761,6 +1736,7 @@
                             addTd(l.device_tag, "p-4 text-indigo-600 font-bold");
                             addTd(sn, "p-4 font-medium text-slate-400");
                             
+                            // Tempoh Pinjaman Column with conditional span
                             const tdTempoh = document.createElement('td');
                             tdTempoh.className = `p-4 ${textClass}`;
                             tdTempoh.innerText = `${l.start_date} → ${l.end_date}`;
@@ -1776,6 +1752,7 @@
                             addTd(opIn, "p-4");
                             addTd(opOut, "p-4");
 
+                            // Tarikh Pulang Column
                             const tdPulang = document.createElement('td');
                             tdPulang.className = `p-4 ${isLateReturned ? 'text-late' : ''}`;
                             tdPulang.innerText = l.return_date ? Utils.formatDate(l.return_date) : '-';
@@ -1899,6 +1876,7 @@
                 const n = document.getElementById('newUserName').value.trim(); 
                 let e = document.getElementById('newUserEmail').value.trim();
                 if(!n || !e) return;
+               // if (!e.includes('@')) e = `${e}@moe.gov.my`;
                 const finalEmail = e.toLowerCase();
                 try {
                     const { error } = await sbClient.from('user_ba').insert([{ id: crypto.randomUUID(), name: n.toUpperCase(), emel: finalEmail }]); 
@@ -1937,6 +1915,7 @@
                 tb.appendChild(trLoad);
 
                 try {
+                    // 1. FETCH DATA
                     const { data: calls } = await sbClient.from('rekod')
                         .select('created_at, sistem, komunikasi') 
                         .gte('created_at', `${year}-01-01`)
@@ -1956,6 +1935,7 @@
                         return counts;
                     };
 
+                    // 2. FILTER LOGIC
                     const solmanItems = calls?.filter(r => 
                         (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || 
                         (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')
@@ -1969,18 +1949,21 @@
                         r.sistem && r.sistem.includes('AD (DOMAIN)')
                     ) || [];
 
+                    // 3. CALCULATE COUNTS
                     const callCounts = processMonths(calls);
                     const loanCounts = processMonths(loans);
                     const solmanCounts = processMonths(solmanItems);
                     const spmpCounts = processMonths(spmpItems);
                     const adCounts = processMonths(adItems);
                     
+                    // 4. CALCULATE TOTALS
                     const callTotal = callCounts.reduce((a, b) => a + b, 0);
                     const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
                     const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0);
                     const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0);
                     const adTotal = adCounts.reduce((a, b) => a + b, 0);
 
+                    // 5. RENDER ROWS
                     tb.innerHTML = '';
                     
                     const renderRow = (bil, title, counts, total, colorCode = null) => {
@@ -2009,6 +1992,7 @@
                         tdTotal.innerText = total;
                         tr.appendChild(tdTotal);
                         
+                        // Determine chart color: Purple (Default), Green (Loan), Amber (Solman), Cyan (SPMP), Rose (AD)
                         let chartColor = '#6366f1'; 
                         if (title.includes('Pinjaman')) chartColor = '#10b981';
                         else if (colorCode) chartColor = colorCode;
@@ -2019,10 +2003,11 @@
 
                     renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal);
                     renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
-                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); 
-                    renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4'); 
-                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); 
+                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); // Amber
+                    renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4'); // Cyan
+                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); // Rose
 
+                    // Default chart load
                     Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
 
                 } catch (e) {
