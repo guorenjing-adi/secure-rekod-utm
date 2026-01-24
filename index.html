@@ -1277,30 +1277,31 @@
                     Assets.fetchData(); 
                     Assets.toggleForm(false);
                 }
+            },
+exportExcel: () => {
+                if (!Assets.filteredData || Assets.filteredData.length === 0) {
+                    Utils.showToast("Tiada data untuk diexport.");
+                    return;
+                }
+                const formatted = Assets.filteredData.map((item, index) => ({
+                    'Bil': index + 1,
+                    'Nama Pengguna': item.nama_pengguna || '-',
+                    'Jenis Aset': item.jenis_aset || '-',
+                    'Seksyen': item.seksyen || '-',
+                    'No. DHM': item.no_dhm || '-',
+                    'No. Siri': item.no_siri || '-',
+                    'Model': item.model || '-',
+                    'Status': item.status || '-',
+                    'Pengguna Terdahulu': item.pengguna_terdahulu || '-',
+                    'Last Updated': item.last_updated ? Utils.formatDate(item.last_updated) : '-'
+                }));
+                const ws = XLSX.utils.json_to_sheet(formatted);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Senarai Aset ICT");
+                XLSX.writeFile(wb, "UTM_Inventory_Aset.xlsx");
             }
         };
-        exportExcel: () => {
-    if (!Assets.filteredData || Assets.filteredData.length === 0) {
-        Utils.showToast("Tiada data untuk diexport.");
-        return;
-    }
-    const formatted = Assets.filteredData.map((item, index) => ({
-        'Bil': index + 1,
-        'Nama Pengguna': item.nama_pengguna || '-',
-        'Jenis Aset': item.jenis_aset || '-',
-        'Seksyen': item.seksyen || '-',
-        'No. DHM': item.no_dhm || '-',
-        'No. Siri': item.no_siri || '-',
-        'Model': item.model || '-',
-        'Status': item.status || '-',
-        'Pengguna Terdahulu': item.pengguna_terdahulu || '-',
-        'Last Updated': item.last_updated ? Utils.formatDate(item.last_updated) : '-'
-    }));
-    const ws = XLSX.utils.json_to_sheet(formatted);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Senarai Aset ICT");
-    XLSX.writeFile(wb, "UTM_Inventory_Aset.xlsx");
-},
+
         const CallLog = {
             options: { komunikasi: [], sistem: [], perkara: [] },
             init: async () => {
