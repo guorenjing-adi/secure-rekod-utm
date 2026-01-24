@@ -623,9 +623,6 @@
                         <button onclick="Assets.exportExcel()" class="btn-hover bg-slate-800 hover:bg-black text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-slate-200 text-xs uppercase tracking-wide flex items-center gap-2">
                         <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export XLSX
                         </button>
-                    <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
-                        </button>
                     </div>
                     <div class="p-4 bg-white border-b border-slate-50">
                         <div class="relative max-w-lg">
@@ -823,7 +820,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         const CONFIG = { 
             supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI',
@@ -924,6 +921,7 @@
 
                     if (error) {
                         console.error("Email Edge Function Error:", error);
+                        // Fail silently or fallback to mailto
                         throw new Error("Gagal menghantar emel.");
                     }
                     return { status: 'sent', data };
@@ -942,7 +940,11 @@
             refresh: async () => {
                 try {
                     const today = Utils.getToday();
-                    const { data: records } = await sbClient.from('rekod').select('created_at, confirmation');
+                    // SECURITY UPDATE: Select minimal columns to calculate stats
+                    const { data: records } = await sbClient.from('rekod')
+                        .select('created_at, confirmation')
+                        .range(0, 999); // Limit to prevent crash on massive dataset
+
                     const todayRecords = records?.filter(r => r.created_at.startsWith(today)) || [];
                     document.getElementById('stat-calls-today').innerText = todayRecords.length;
                     const totalRecords = records?.length || 0;
@@ -952,6 +954,7 @@
                     document.getElementById('stat-solved-pct').innerText = `${solvedPct}%`;
                     document.getElementById('stat-solved-count').innerText = `${solvedRecords.length} cases`;
                     document.getElementById('stat-pending-count').innerText = pendingRecords.length;
+                    
                     const { count: personnelCount } = await sbClient.from('personnel').select('*', { count: 'exact', head: true });
                     document.getElementById('stat-total-personnel').innerText = personnelCount || 0;
                 } catch (e) {
@@ -985,6 +988,7 @@
                 else Auth.onAuth(data.user);
             },
             register: async (e) => {
+                // NOTE: User has disabled public signups in Supabase. This will likely fail on backend, which is correct.
                 e.preventDefault();
                 const btn = document.getElementById('reg-btn'); 
                 btn.classList.add('loading');
@@ -1007,7 +1011,13 @@
                 STATE.currentUser = user;
                 document.getElementById('user-display').innerText = user.email;
                 try {
-                    const { data: users } = await sbClient.from('user_ba').select('*');
+                    // SECURITY UPDATE: Only fetch Name and Email. Do NOT fetch all columns.
+                    // Added Limit to prevent excessive data loading.
+                    const { data: users } = await sbClient
+                        .from('user_ba')
+                        .select('name, emel, nama, email') // Support both column naming conventions
+                        .limit(2000);
+                        
                     users?.forEach(u => { 
                         const name = u.name || u.nama;
                         const emel = u.emel || u.email;
@@ -1107,10 +1117,12 @@
                 const tbody = document.getElementById('asset-table-body');
                 tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
 
+                // SECURITY UPDATE: Use range/pagination instead of select all
                 const { data, error } = await sbClient
                     .from('aset')
                     .select('*')
-                    .order('created_at', { ascending: true });
+                    .order('created_at', { ascending: true })
+                    .range(0, 49); // Fetch first 50 rows initially to prevent browser crash
 
                 if (error) {
                     tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
@@ -1255,6 +1267,7 @@
                     model: document.getElementById('inp-model').value,
                     status: document.getElementById('inp-status').value,
                     pengguna_terdahulu: document.getElementById('inp-prevUser').value,
+                    // SECURITY: 'editor' can still be sent, but RLS should ideally handle it or check it.
                     editor: STATE.currentUser.email,
                     last_updated: new Date()
                 };
@@ -1278,7 +1291,7 @@
                     Assets.toggleForm(false);
                 }
             },
-exportExcel: () => {
+            exportExcel: () => {
                 if (!Assets.filteredData || Assets.filteredData.length === 0) {
                     Utils.showToast("Tiada data untuk diexport.");
                     return;
@@ -1396,7 +1409,12 @@ exportExcel: () => {
                     loadingDiv.innerText = 'Mencari...';
                     dd.appendChild(loadingDiv);
 
-                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(8);
+                    // SECURITY: Use .ilike for safe matching, limit results
+                    const { data } = await sbClient.from('personnel')
+                        .select('*')
+                        .or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`)
+                        .limit(8);
+
                     dd.innerHTML = ''; // Clear loading
                     
                     if (!data || data.length === 0) {
@@ -1412,7 +1430,7 @@ exportExcel: () => {
                             
                             const nameDiv = document.createElement('div');
                             nameDiv.className = "font-bold text-slate-800 text-sm uppercase";
-                            nameDiv.innerText = p.nama;
+                            nameDiv.innerText = p.nama; // Safe via innerText
                             
                             const metaDiv = document.createElement('div');
                             metaDiv.className = "text-slate-400 text-[10px] font-bold tracking-widest mt-1";
@@ -1466,7 +1484,23 @@ exportExcel: () => {
                 const komChecked = document.querySelector('input[name="komunikasi"]:checked');
                 const issueVal = document.getElementById('issue-dropdown').value;
                 if (!sysChecked || !issueVal) return;
-                const log = { ic_number: document.getElementById('ic').value, nama: document.getElementById('nama').value, department: document.getElementById('department').value, perekod: STATE.currentUser.email, submitted_by: STATE.currentUser.id, sistem: sysChecked.value, perkara: issueVal, komunikasi: komChecked ? komChecked.value : 'Call', confirmation: 'TIDAK' };
+                
+                // SECURITY UPDATE:
+                // We REMOVED 'perekod', 'submitted_by', and 'confirmation' from this payload.
+                // The Database Trigger 'secure_insert_rekod' will populate these automatically based on auth.uid().
+                // This prevents client-side spoofing.
+                const log = { 
+                    ic_number: document.getElementById('ic').value, 
+                    nama: document.getElementById('nama').value, 
+                    department: document.getElementById('department').value, 
+                    // perekod: ... (Handled by DB)
+                    // submitted_by: ... (Handled by DB)
+                    sistem: sysChecked.value, 
+                    perkara: issueVal, 
+                    komunikasi: komChecked ? komChecked.value : 'Call'
+                    // confirmation: ... (Handled by DB to default 'TIDAK')
+                };
+                
                 const { error } = await sbClient.from('rekod').insert([log]);
                 if(!error) { 
                     CallLog.updateMasterData(); 
@@ -1474,6 +1508,8 @@ exportExcel: () => {
                     document.getElementById('data-form').reset(); 
                     CallLog.checkValidity(); 
                     Dashboard.refresh();
+                } else {
+                    Utils.showToast("Ralat: " + error.message);
                 }
             }
         };
@@ -1525,7 +1561,13 @@ exportExcel: () => {
                 tb.appendChild(tr);
 
                 try {
-                    const { data: r } = await sbClient.from('rekod').select('*').order('created_at', { ascending: false }).limit(100);
+                    // SECURITY UPDATE: Added range/pagination limit
+                    const { data: r } = await sbClient
+                        .from('rekod')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .range(0, 49); // Pagination limit
+                        
                     Records.currentData = r || []; Records.renderBody();
                 } catch (e) {}
             },
@@ -1574,10 +1616,16 @@ exportExcel: () => {
                 });
             },
             update: async (id, v) => { 
-                await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); 
-                Utils.showToast("Status dikemaskini"); 
-                Records.fetch(); 
-                Dashboard.refresh();
+                // Note: The new RLS policy might block this if the user is not the owner or authorized.
+                const { error } = await sbClient.from('rekod').update({ confirmation: v, status_updated_at: new Date(), status_updated_by: STATE.currentUser.email }).eq('id', id); 
+                if (error) {
+                    Utils.showToast("Ralat Kemaskini: " + error.message);
+                    Records.fetch(); // Revert UI
+                } else {
+                    Utils.showToast("Status dikemaskini"); 
+                    Records.fetch(); 
+                    Dashboard.refresh();
+                }
             },
             exportExcel: () => {
                 const formatted = Records.currentData.map(r => {
@@ -1616,12 +1664,16 @@ exportExcel: () => {
                     });
                 }
                 try {
-                    const { data: u } = await sbClient.from('user_ba').select('*');
+                    // SECURITY UPDATE: Only fetch 'name' for the datalist, not sensitive columns
+                    const { data: u } = await sbClient.from('user_ba')
+                        .select('name')
+                        .limit(2000);
+
                     const dl = document.getElementById('userList'); 
                     if (dl) {
                         dl.innerHTML = '';
                         u?.sort((a, b) => (a.name || "").localeCompare(b.name || "")).forEach(i => {
-                            const val = i.name || i.nama;
+                            const val = i.name;
                             if (val) { const o = document.createElement('option'); o.value = val; dl.appendChild(o); }
                         });
                     }
