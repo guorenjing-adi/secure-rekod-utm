@@ -619,7 +619,14 @@
                             <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
                         </button>
                     </div>
-
+                    <div class="flex gap-2">
+                        <button onclick="Assets.exportExcel()" class="btn-hover bg-slate-800 hover:bg-black text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-slate-200 text-xs uppercase tracking-wide flex items-center gap-2">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export XLSX
+                        </button>
+                    <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-100 text-xs uppercase tracking-wide flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
+                        </button>
+                    </div>
                     <div class="p-4 bg-white border-b border-slate-50">
                         <div class="relative max-w-lg">
                             <input type="text" id="asset-search-input" class="input-modern w-full px-4 py-2.5 rounded-xl text-sm font-medium pl-10" placeholder="Cari nama, siri, model..." onkeyup="Assets.handleSearch()">
@@ -1272,7 +1279,28 @@
                 }
             }
         };
-
+        exportExcel: () => {
+    if (!Assets.filteredData || Assets.filteredData.length === 0) {
+        Utils.showToast("Tiada data untuk diexport.");
+        return;
+    }
+    const formatted = Assets.filteredData.map((item, index) => ({
+        'Bil': index + 1,
+        'Nama Pengguna': item.nama_pengguna || '-',
+        'Jenis Aset': item.jenis_aset || '-',
+        'Seksyen': item.seksyen || '-',
+        'No. DHM': item.no_dhm || '-',
+        'No. Siri': item.no_siri || '-',
+        'Model': item.model || '-',
+        'Status': item.status || '-',
+        'Pengguna Terdahulu': item.pengguna_terdahulu || '-',
+        'Last Updated': item.last_updated ? Utils.formatDate(item.last_updated) : '-'
+    }));
+    const ws = XLSX.utils.json_to_sheet(formatted);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Senarai Aset ICT");
+    XLSX.writeFile(wb, "UTM_Inventory_Aset.xlsx");
+},
         const CallLog = {
             options: { komunikasi: [], sistem: [], perkara: [] },
             init: async () => {
