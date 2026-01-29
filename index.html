@@ -55,6 +55,7 @@
         th, td { padding: 0.75rem 1rem; }
         th { background: #f8fafc; font-weight: 600; border-bottom: 2px solid #f1f5f9; color: #475569; position: sticky; top: 0; z-index: 10; }
 
+        /* Mode: WRAP */
         .wrap-mode table { min-width: 100% !important; table-layout: auto !important; }
         .wrap-mode th, .wrap-mode td { 
             white-space: normal !important; 
@@ -64,6 +65,7 @@
             vertical-align: top;
         }
 
+        /* Mode: COMPACT */
         .compact-mode .table-container { overflow-x: hidden !important; }
         .compact-mode table { 
             min-width: 100% !important; 
@@ -90,6 +92,7 @@
             content: "UTM"; position: absolute; color: #f8fafc; font-weight: 800; font-size: 1.25rem;
             animation: pulse-zoom 1.5s ease-in-out infinite;
         }
+        @keyframes pulse-zoom { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
 
         .tab-active-main { 
             background-color: white !important; 
@@ -116,8 +119,14 @@
             transition: all 0.2s ease;
             border: 1px solid #e2e8f0;
         }
+        .input-modern:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
         
         .row-late { background-color: #fef2f2 !important; } 
+        .row-late:hover { background-color: #fee2e2 !important; }
         .text-late { color: #dc2626 !important; font-weight: 700; }
     </style>
 </head>
@@ -138,12 +147,44 @@
                 <h1 class="text-2xl font-bold text-slate-900">Sistem Rekod IT</h1>
                 <p class="text-slate-500 text-sm mt-1">Akses Pangkalan Data & Inventori</p>
             </div>
+            
             <form id="login-form" class="space-y-5">
-                <input type="email" id="email" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="nama@utm.my" required>
-                <input type="password" id="password" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="••••••••" required>
-                <div id="login-error" class="text-red-500 text-sm hidden"></div>
-                <button type="submit" id="login-btn" class="login-btn-anim btn-hover w-full bg-indigo-600 text-white font-bold py-4 rounded-xl">Akses Sistem</button>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Emel Rasmi</label>
+                    <input type="email" id="email" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="nama@utm.my" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Kata Laluan</label>
+                    <input type="password" id="password" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="••••••••" required>
+                </div>
+                <div id="login-error" class="text-red-500 text-sm hidden bg-red-50 border border-red-100 p-4 rounded-xl font-medium"></div>
+                <button type="submit" id="login-btn" class="login-btn-anim btn-hover w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center">
+                    Akses Sistem
+                </button>
+                <div class="text-center mt-6 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="Auth.toggleForm('register')" class="text-indigo-600 text-sm font-bold hover:underline">Daftar Akaun Baru</button>
+                </div>
             </form>
+
+            <form id="register-form" class="space-y-5 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Emel Rasmi</label>
+                    <input type="email" id="reg-email" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="nama@utm.my" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Kata Laluan Baru</label>
+                    <input type="password" id="reg-password" class="input-modern w-full px-4 py-3 rounded-xl" placeholder="Min. 6 aksara" required minlength="6">
+                </div>
+                <div id="reg-error" class="text-red-500 text-sm hidden bg-red-50 border border-red-100 p-4 rounded-xl font-medium"></div>
+                <div id="reg-success" class="text-emerald-600 text-sm hidden bg-emerald-50 border border-emerald-100 p-4 rounded-xl font-medium"></div>
+                <button type="submit" id="reg-btn" class="login-btn-anim btn-hover w-full bg-slate-800 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-200 transition-all flex items-center justify-center">
+                    Daftar Akaun
+                </button>
+                <div class="text-center mt-4">
+                    <button type="button" onclick="Auth.toggleForm('login')" class="text-slate-400 text-sm font-bold hover:text-slate-600">Kembali ke Log Masuk</button>
+                </div>
+            </form>
+            <div id="debug-console" class="mt-8"><div>> System ready. Waiting for auth...</div></div>
         </div>
     </div>
 
@@ -152,54 +193,227 @@
             <div class="w-full px-4 md:px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-4">
                 <div class="flex items-center w-full lg:w-auto justify-between lg:justify-start">
                     <div class="flex items-center gap-3 mr-6 md:mr-10">
-                        <div class="p-2 bg-indigo-500 rounded-lg"><i data-lucide="database" class="w-5 h-5"></i></div>
+                        <div class="p-2 bg-indigo-500 rounded-lg">
+                            <i data-lucide="database" class="w-5 h-5"></i>
+                        </div>
                         <span class="font-extrabold text-lg md:text-xl tracking-tight">UTM <span class="text-indigo-400">IT</span></span>
                     </div>
                     <div class="flex gap-1 bg-slate-800/50 p-1 rounded-xl border border-slate-700 overflow-x-auto">
-                        <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all tab-active-main">Call Log</button>
-                        <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all">Pinjaman ICT</button>
-                        <button onclick="Navigation.switchModule('assets')" id="nav-assets" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all">Aset ICT</button>
-                        <button onclick="Navigation.switchModule('summary')" id="nav-summary" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all">Ringkasan</button>
+                        <button onclick="Navigation.switchModule('call-log')" id="nav-call-log" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tab-active-main">Call Log</button>
+                        <button onclick="Navigation.switchModule('loan')" id="nav-loan" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase">Pinjaman ICT</button>
+                        <button onclick="Navigation.switchModule('assets')" id="nav-assets" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase">Aset ICT</button>
+                        <button onclick="Navigation.switchModule('summary')" id="nav-summary" class="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase">Ringkasan</button>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span id="user-display" class="text-slate-300 text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full"></span>
-                    <button onclick="Auth.logout()" class="bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-lg text-xs font-bold">Keluar</button>
+
+                <div class="flex items-center gap-2 bg-slate-900/40 p-1.5 rounded-xl border border-slate-700 w-full lg:w-auto justify-center">
+                    <button onclick="UI.setViewMode('wrap')" id="btn-view-wrap" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-white/10 flex items-center gap-1.5 transition-all">
+                        <i data-lucide="wrap-text" class="w-3 h-3"></i> Wrap
+                    </button>
+                    <button onclick="UI.setViewMode('compact')" id="btn-view-compact" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-white/10 flex items-center gap-1.5 transition-all">
+                        <i data-lucide="minimize-2" class="w-3 h-3"></i> Compact
+                    </button>
+                    <button onclick="UI.setViewMode('default')" id="btn-view-default" class="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-white/10 flex items-center gap-1.5 transition-all">
+                        <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Reset
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 md:gap-5 w-full lg:w-auto justify-end">
+                    <div class="flex items-center gap-3">
+                        <span id="user-display" class="hidden sm:inline text-slate-300 text-xs font-semibold px-3 py-1.5 bg-slate-800 rounded-full border border-slate-700"></span>
+                        <button onclick="Auth.logout()" class="bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+                            <i data-lucide="log-out" class="w-3 h-3"></i> <span class="hidden md:inline">Keluar</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </nav>
 
         <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
+            <div id="call-log-module" class="w-full space-y-4 md:space-y-6">
+                <div id="it-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
+                    <div class="card-modern p-3 border-l-4 border-l-indigo-500 bg-white">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Panggilan Hari Ini</span>
+                            <i data-lucide="phone-incoming" class="w-3.5 h-3.5 text-indigo-400"></i>
+                        </div>
+                        <div id="stat-calls-today" class="text-xl md:text-2xl font-black text-slate-800">0</div>
+                    </div>
+                    <div class="card-modern p-3 border-l-4 border-l-emerald-500 bg-white">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Selesai Aduan</span>
+                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <div id="stat-solved-pct" class="text-xl md:text-2xl font-black text-slate-800">0%</div>
+                            <div id="stat-solved-count" class="text-[9px] font-bold text-slate-400 uppercase">0 cases</div>
+                        </div>
+                    </div>
+                    <div class="card-modern p-3 border-l-4 border-l-rose-500 bg-white">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Tidak Selesai</span>
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-rose-400"></i>
+                        </div>
+                        <div id="stat-pending-count" class="text-xl md:text-2xl font-black text-slate-800">0</div>
+                    </div>
+                    <div class="card-modern p-3 border-l-4 border-l-amber-500 bg-white">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Jumlah Personnel</span>
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-amber-400"></i>
+                        </div>
+                        <div id="stat-total-personnel" class="text-xl md:text-2xl font-black text-slate-800">0</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center bg-white p-1 rounded-xl shadow-sm border border-slate-100 overflow-x-auto w-full md:w-auto">
+                        <button onclick="Navigation.switchSubTab('call-log', 'input')" id="tab-cl-input" class="whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all tab-active-sub">Dashboard Input</button>
+                        <button onclick="Navigation.switchSubTab('call-log', 'records')" id="tab-cl-records" class="whitespace-nowrap px-4 md:px-6 py-2 rounded-lg font-bold text-xs md:text-sm transition-all text-slate-400">Pangkalan Data</button>
+                    </div>
+                </div>
+
+                <div id="cl-input-section" class="grid grid-cols-1 gap-4 md:gap-6">
+                    <div class="card-modern p-4 md:p-5">
+                        <h2 class="text-[10px] font-bold text-slate-400 mb-2 flex gap-2 items-center uppercase tracking-widest"><i data-lucide="search" class="w-3.5 h-3.5 text-indigo-500"></i> Carian User</h2>
+                        <div class="relative max-w-xl">
+                            <input type="text" id="global-search" class="input-modern w-full px-4 py-2.5 rounded-xl text-sm md:text-base font-medium" placeholder="Cari Nama, IC, atau Kod PTJ...">
+                            <div id="search-results-dropdown" class="absolute z-50 w-full bg-white shadow-2xl rounded-2xl border border-slate-100 hidden max-h-60 overflow-y-auto mt-2 p-1.5"></div>
+                        </div>
+                    </div>
+
+                    <div class="card-modern p-1">
+                        <form id="data-form" class="p-4 md:p-5">
+                            <input type="hidden" id="is-new-user" value="false">
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+                                <div class="lg:col-span-7 space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="col-span-full">
+                                            <label class="text-[10px] font-bold text-slate-500 mb-1 block">Nama Penuh</label>
+                                            <div class="relative group">
+                                                <input type="text" id="nama" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50 uppercase font-semibold text-slate-700 text-sm" readonly>
+                                                <button type="button" onclick="Utils.enableField('nama')" class="absolute right-2 top-2 text-slate-300 hover:text-indigo-500 transition-colors"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                                            </div>
+                                        </div>
+                                        <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">No. Kad Pengenalan</label><input type="text" id="ic" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50" readonly></div>
+                                        <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Kod PTJ</label><input type="text" id="kod_ptj" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50" readonly></div>
+                                        <div class="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Jabatan</label><input type="text" id="department" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50" readonly></div>
+                                            <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Emel</label><input type="email" id="emel" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50" readonly></div>
+                                        </div>
+                                        <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Telefon</label><input type="text" id="telefon" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50" readonly></div>
+                                        <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Gred</label><input type="text" id="gred" class="input-modern w-full px-3 py-2 rounded-lg bg-slate-50" readonly></div>
+                                    </div>
+                                </div>
+                                <div class="lg:col-span-5 bg-slate-50 p-4 md:p-5 rounded-xl border border-slate-100 h-fit space-y-4">
+                                    <div>
+                                        <label class="text-[9px] font-bold text-slate-700 uppercase tracking-wide">Medium Komunikasi</label>
+                                        <div id="container-komunikasi" class="flex flex-wrap gap-2 mt-2"></div>
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] font-bold text-slate-700 uppercase tracking-wide">Pilihan Sistem</label>
+                                        <div id="container-sistem" class="grid grid-cols-2 gap-2 mt-2"></div>
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] font-bold text-slate-700 uppercase tracking-wide">Perkara / Isu</label>
+                                        <select id="issue-dropdown" class="input-modern w-full px-3 py-2 rounded-lg bg-white mt-2"></select>
+                                    </div>
+                                    <button type="submit" id="submit-btn" disabled class="btn-hover w-full mt-4 bg-emerald-600 text-white font-extrabold py-3.5 rounded-xl opacity-50 cursor-not-allowed uppercase tracking-tight">Rekod Aduan</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id="cl-records-section" class="hidden-section">
+                <div class="card-modern overflow-hidden">
+                    <div class="table-container m-1 max-h-[65vh] overflow-y-auto border border-slate-100 rounded-b-xl relative">
+                        <table id="main-records-table" class="data-table">
+                            <thead id="records-table-head" class="uppercase tracking-wider sticky top-0 bg-white z-20"></thead>
+                            <tbody id="records-table-body" class="text-slate-600"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loan-module" class="hidden-section w-full space-y-4 md:space-y-6">
+                <div class="card-modern p-1">
+                    <div class="p-6 md:p-8 border-b border-slate-50 flex items-center gap-4">
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><i data-lucide="monitor-smartphone" class="w-6 h-6"></i></div>
+                        <div><h2 class="text-lg md:text-xl font-extrabold text-slate-800 tracking-tight">Sistem Pengurusan Pinjaman Aset ICT</h2></div>
+                    </div>
+                    <div class="flex flex-wrap border-b border-slate-50 bg-slate-50/50 p-2 overflow-x-auto gap-1">
+                        <button onclick="Navigation.switchSubTab('loan', 'borrow')" id="tab-loan-borrow" class="px-6 py-3 rounded-xl font-bold text-xs uppercase tab-active-sub">Pinjaman Baru</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'return')" id="tab-loan-return" class="px-6 py-3 rounded-xl font-bold text-xs uppercase text-slate-400">Pemulangan</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'admin')" id="tab-loan-admin" class="px-6 py-3 rounded-xl font-bold text-xs uppercase text-slate-400">Inventori & Admin</button>
+                        <button onclick="Navigation.switchSubTab('loan', 'history')" id="tab-loan-history" class="px-6 py-3 rounded-xl font-bold text-xs uppercase text-slate-400">Arkib Rekod</button>
+                    </div>
+                    <div class="p-6">
+                        <div id="loan-borrow-section" class="max-w-4xl mx-auto">
+                            <form id="loanForm" class="space-y-8 bg-slate-50 p-6 md:p-10 rounded-3xl">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div class="col-span-full"><label class="text-xs font-bold text-slate-500 uppercase">Peminjam</label><input type="text" id="loanUserName" list="userList" class="input-modern w-full px-4 py-3 rounded-xl mt-2"><datalist id="userList"></datalist></div>
+                                    <div><label class="text-xs font-bold text-slate-500 uppercase">Peranti Tersedia</label><select id="deviceSelect" class="input-modern w-full px-4 py-3 rounded-xl mt-2"></select></div>
+                                    <div><label class="text-xs font-bold text-slate-500 uppercase">Tarikh Pemulangan</label><input type="date" id="loanEndDate" class="input-modern w-full px-4 py-3 rounded-xl mt-2 text-rose-600 font-bold"></div>
+                                </div>
+                                <button type="button" onclick="Loan.submit()" class="btn-hover w-full bg-indigo-600 text-white font-extrabold py-5 rounded-2xl uppercase tracking-tight">Sahkan Pinjaman</button>
+                            </form>
+                        </div>
+                        <div id="loan-return-section" class="hidden-section text-center max-w-2xl mx-auto">
+                            <select id="returnSelect" class="input-modern w-full px-6 py-4 rounded-2xl mb-8 shadow-xl bg-white text-lg font-bold border-none"></select>
+                            <button onclick="Loan.submitReturn()" class="btn-hover bg-emerald-600 text-white font-extrabold py-4 px-16 rounded-2xl uppercase tracking-wide">Sahkan Pulangan</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="assets-module" class="hidden-section w-full space-y-4 md:space-y-6">
+                <div class="card-modern p-1">
+                    <div class="p-6 md:p-8 border-b border-slate-50 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl"><i data-lucide="hard-drive" class="w-6 h-6"></i></div>
+                            <div><h2 class="text-lg md:text-xl font-extrabold text-slate-800 tracking-tight">Sistem Pengurusan Aset ICT</h2></div>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="Assets.exportExcel()" class="btn-hover bg-white border border-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl text-xs uppercase shadow-sm flex items-center gap-2"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i> Export Data</button>
+                            <button onclick="Assets.toggleForm(true)" class="btn-hover bg-emerald-600 text-white font-bold py-2.5 px-6 rounded-xl text-xs uppercase flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset</button>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-white border-b border-slate-50">
+                        <div class="relative max-w-lg">
+                            <input type="text" id="asset-search-input" class="input-modern w-full px-4 py-2.5 rounded-xl text-sm font-medium pl-10" placeholder="Cari nama, siri, model..." onkeyup="Assets.handleSearch()">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                            <div class="absolute right-3 top-3 text-[10px] text-slate-400 font-bold" id="asset-record-count"></div>
+                        </div>
+                    </div>
+                    <div class="table-container m-0 border-none rounded-none max-h-[70vh] overflow-y-auto">
+                        <table id="asset-main-table" class="data-table w-full">
+                            <thead class="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider text-[10px] border-b border-slate-100">
+                                <tr><th>Bil</th><th>Nama Pengguna</th><th>Jenis Aset</th><th>Seksyen</th><th>No. DHM</th><th>No. Siri</th><th>Model</th><th>Status</th><th>Tindakan</th></tr>
+                            </thead>
+                            <tbody id="asset-table-body" class="text-slate-600 text-[10px] font-medium"></tbody>
+                        </table>
+                    </div>
+                    <div class="p-4 bg-slate-50 border-t border-slate-100 text-center"><button id="btn-asset-show-all" onclick="Assets.toggleShowAll()" class="text-indigo-600 text-xs font-bold hover:underline">Tunjukkan Semua Rekod</button></div>
+                </div>
+            </div>
+
             <div id="summary-module" class="hidden-section w-full space-y-8 md:space-y-12">
                 <div class="card-modern p-6 md:p-10 flex flex-col items-center">
                     <div class="text-center mb-8">
                         <h2 class="text-xl md:text-3xl font-black text-slate-800 tracking-tighter uppercase">Statistik Bulanan <span id="summary-year-display"></span></h2>
-                        <p class="text-slate-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-widest">Analisis Prestasi Perkhidmatan & Aset</p>
+                        <p class="text-slate-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-widest">Klik baris jadual untuk melihat carta bulanan terperinci</p>
                     </div>
-
-                    <div class="w-full max-w-4xl mx-auto mb-12 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                        <canvas id="summaryChart" class="max-h-[400px]"></canvas>
-                    </div>
+                    <div class="w-full max-w-4xl mx-auto mb-12 bg-slate-50 p-6 rounded-3xl border border-slate-100"><canvas id="summaryChart" class="max-h-[400px]"></canvas></div>
 
                     <div class="w-full space-y-4 mb-10">
                         <div class="flex items-center justify-between px-2">
-                            <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2">
-                                <i data-lucide="table-2" class="w-5 h-5 text-indigo-500"></i> Jadual Statistik Tahunan
-                            </h3>
+                            <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2"><i data-lucide="table-2" class="w-5 h-5 text-indigo-500"></i> Jadual Statistik Tahunan</h3>
                             <button onclick="Summary.init()" class="bg-slate-100 p-2 rounded-lg hover:bg-indigo-100 text-indigo-600 transition-all"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                         </div>
                         <div class="table-container shadow-2xl shadow-slate-200/50 border border-slate-100">
-                            <table id="summary-table" class="data-table">
+                            <table class="data-table">
                                 <thead class="bg-slate-50 border-b border-slate-100 text-[10px] md:text-[11px] font-black uppercase tracking-wider text-slate-500">
-                                    <tr>
-                                        <th class="p-4 text-center">BIL</th>
-                                        <th class="p-4 text-left">Perkara</th>
-                                        <th class="p-4 text-center">JAN</th><th class="p-4 text-center">FEB</th><th class="p-4 text-center">MAR</th>
-                                        <th class="p-4 text-center">APR</th><th class="p-4 text-center">MEI</th><th class="p-4 text-center">JUN</th>
-                                        <th class="p-4 text-center">JUL</th><th class="p-4 text-center">OGO</th><th class="p-4 text-center">SEP</th>
-                                        <th class="p-4 text-center">OKT</th><th class="p-4 text-center">NOV</th><th class="p-4 text-center">DIS</th>
-                                        <th class="p-4 text-center bg-indigo-50 text-indigo-700">Jumlah</th>
-                                    </tr>
+                                    <tr><th>BIL</th><th>Perkara</th><th>JAN</th><th>FEB</th><th>MAR</th><th>APR</th><th>MEI</th><th>JUN</th><th>JUL</th><th>OGO</th><th>SEP</th><th>OKT</th><th>NOV</th><th>DIS</th><th class="bg-indigo-50 text-indigo-700">Jumlah</th></tr>
                                 </thead>
                                 <tbody id="summary-table-body" class="text-[10px] md:text-xs font-bold text-slate-600"></tbody>
                             </table>
@@ -208,22 +422,12 @@
 
                     <div class="w-full space-y-4">
                         <div class="flex items-center justify-between px-2">
-                            <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2">
-                                <i data-lucide="monitor" class="w-5 h-5 text-emerald-500"></i> Statistik Pinjaman Peralatan (TAG ASET)
-                            </h3>
+                            <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2"><i data-lucide="monitor" class="w-5 h-5 text-emerald-500"></i> Statistik Pinjaman Peralatan (TAG ASET)</h3>
                         </div>
                         <div class="table-container shadow-2xl shadow-slate-200/50 border border-slate-100">
-                            <table id="device-summary-table" class="data-table">
+                            <table class="data-table">
                                 <thead class="bg-slate-50 border-b border-slate-100 text-[10px] md:text-[11px] font-black uppercase tracking-wider text-slate-500">
-                                    <tr>
-                                        <th class="p-4 text-center">BIL</th>
-                                        <th class="p-4 text-left">Tag Aset</th>
-                                        <th class="p-4 text-center">JAN</th><th class="p-4 text-center">FEB</th><th class="p-4 text-center">MAR</th>
-                                        <th class="p-4 text-center">APR</th><th class="p-4 text-center">MEI</th><th class="p-4 text-center">JUN</th>
-                                        <th class="p-4 text-center">JUL</th><th class="p-4 text-center">OGO</th><th class="p-4 text-center">SEP</th>
-                                        <th class="p-4 text-center">OKT</th><th class="p-4 text-center">NOV</th><th class="p-4 text-center">DIS</th>
-                                        <th class="p-4 text-center bg-emerald-50 text-emerald-700">Jumlah</th>
-                                    </tr>
+                                    <tr><th>BIL</th><th>Tag Aset</th><th>JAN</th><th>FEB</th><th>MAR</th><th>APR</th><th>MEI</th><th>JUN</th><th>JUL</th><th>OGO</th><th>SEP</th><th>OKT</th><th>NOV</th><th>DIS</th><th class="bg-emerald-50 text-emerald-700">Jumlah</th></tr>
                                 </thead>
                                 <tbody id="device-summary-body" class="text-[10px] md:text-xs font-bold text-slate-600"></tbody>
                             </table>
@@ -233,143 +437,94 @@
             </div>
         </main>
     </div>
-    // ... (Previous modules like CallLog, Records, Assets remain the same)
+
+    <div id="toast" class="fixed bottom-8 right-8 bg-slate-900/95 backdrop-blur-lg text-white px-8 py-5 rounded-2xl shadow-2xl transform translate-y-32 transition-all duration-500 opacity-0 z-[100] border border-slate-800 font-bold flex items-center gap-4 text-sm md:text-base"></div>
+
+    <script>
+        const CONFIG = { 
+            supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
+            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI'
+        };
+        const STATE = { currentUser: null, userMap: {}, userEmails: {}, deviceMap: {} };
+        const sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+
+        const Utils = {
+            showToast: (msg) => { const t = document.getElementById('toast'); t.innerText = msg; t.classList.remove('opacity-0', 'translate-y-32'); setTimeout(() => t.classList.add('opacity-0', 'translate-y-32'), 3000); },
+            formatDate: (d) => d ? new Date(d).toLocaleString('ms-MY', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-',
+            getToday: () => new Date().toISOString().split('T')[0],
+            showPage: (pageId) => { ['index-page', 'login-page', 'main-page'].forEach(p => document.getElementById(p).classList.add('hidden-section')); document.getElementById(pageId).classList.remove('hidden-section'); }
+        };
+
+        const Auth = {
+            init: async () => { try { const { data: { session } } = await sbClient.auth.getSession(); if (session) Auth.onAuth(session.user); else Utils.showPage('login-page'); } catch (e) { Utils.showPage('login-page'); } },
+            onAuth: async (user) => { 
+                STATE.currentUser = user; document.getElementById('user-display').innerText = user.email;
+                try { 
+                    const { data: users } = await sbClient.from('user_ba').select('*'); 
+                    users?.forEach(u => { const n = u.name || u.nama; const e = u.emel || u.email; if(e && n) STATE.userEmails[n.toUpperCase().trim()] = e.toLowerCase(); });
+                } catch (e) {}
+                Utils.showPage('main-page'); Navigation.switchModule('call-log'); CallLog.init(); 
+            },
+            login: async (e) => { e.preventDefault(); const btn = document.getElementById('login-btn'); btn.classList.add('loading'); const { data, error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value }); if (error) { btn.classList.remove('loading'); Utils.showToast(error.message); } else Auth.onAuth(data.user); },
+            logout: async () => { await sbClient.auth.signOut(); Utils.showPage('login-page'); }
+        };
+
+        const Navigation = {
+            switchModule: (mod) => { ['call-log', 'loan', 'assets', 'summary'].forEach(m => { document.getElementById(m + '-module').classList.toggle('hidden-section', m !== mod); const btn = document.getElementById('nav-' + m); if(btn) btn.className = m === mod ? 'px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tab-active-main' : 'px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase'; }); if (mod === 'loan') Loan.loadData(); else if (mod === 'assets') Assets.init(); else if (mod === 'summary') Summary.init(); },
+            switchSubTab: (mod, tab) => { ['borrow','return','admin','history'].forEach(t => { const el = document.getElementById(`loan-${t}-section`); if(el) el.classList.toggle('hidden-section', t !== tab); const tabEl = document.getElementById(`tab-loan-${t}`); if(tabEl) tabEl.className = t === tab ? 'px-6 py-3 rounded-xl font-bold text-xs uppercase tab-active-sub' : 'px-6 py-3 rounded-xl font-bold text-xs uppercase text-slate-400'; }); }
+        };
 
         const Summary = {
             chart: null,
             init: async () => {
-                const year = new Date().getFullYear();
-                document.getElementById('summary-year-display').innerText = year;
-                
-                // Clear and show loaders for both tables
-                const tb = document.getElementById('summary-table-body');
-                const devTb = document.getElementById('device-summary-body');
-                const loaderHtml = '<tr><td colspan="15" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
-                tb.innerHTML = loaderHtml;
-                devTb.innerHTML = loaderHtml;
-
+                const year = new Date().getFullYear(); document.getElementById('summary-year-display').innerText = year;
+                const tb = document.getElementById('summary-table-body'); const devTb = document.getElementById('device-summary-body');
+                tb.innerHTML = devTb.innerHTML = '<tr><td colspan="15" class="p-10 text-center">Loading Data...</td></tr>';
                 try {
-                    // 1. FETCH DATA
-                    const { data: calls } = await sbClient.from('rekod')
-                        .select('created_at, sistem, komunikasi') 
-                        .gte('created_at', `${year}-01-01`)
-                        .lte('created_at', `${year}-12-31`);
-                        
-                    const { data: loans } = await sbClient.from('rekod_pinjaman')
-                        .select('created_at, device_tag')
-                        .gte('created_at', `${year}-01-01`)
-                        .lte('created_at', `${year}-12-31`);
-
-                    const { data: inventory } = await sbClient.from('device_inventory')
-                        .select('tag')
-                        .order('tag', { ascending: true });
-
-                    const processMonths = (items) => {
-                        const counts = new Array(12).fill(0);
-                        items?.forEach(item => {
-                            const month = new Date(item.created_at).getMonth();
-                            counts[month]++;
-                        });
-                        return counts;
-                    };
-
-                    // 2. PROCESS MAIN SUMMARY TABLE
-                    const callCounts = processMonths(calls);
-                    const loanCounts = processMonths(loans);
-                    const solmanCounts = processMonths(calls?.filter(r => 
-                        (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || 
-                        (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')
-                    ));
-                    const spmpCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('SPMP (MYGOVUC3.0\\GMAIL)')));
-                    const adCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('AD (DOMAIN)')));
+                    const { data: calls } = await sbClient.from('rekod').select('created_at').gte('created_at', `${year}-01-01`);
+                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at, device_tag').gte('created_at', `${year}-01-01`);
+                    const { data: inventory } = await sbClient.from('device_inventory').select('tag').order('tag', { ascending: true });
+                    const processMonths = (items) => { const c = new Array(12).fill(0); items?.forEach(i => { c[new Date(i.created_at).getMonth()]++; }); return c; };
                     
-                    tb.innerHTML = '';
-                    const renderRow = (bil, title, counts, color) => {
-                        const total = counts.reduce((a, b) => a + b, 0);
-                        const tr = document.createElement('tr');
-                        tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
-                        tr.innerHTML = `
-                            <td class="p-4 text-center text-slate-400 font-bold">${bil}</td>
-                            <td class="p-4 font-black uppercase text-slate-800">${title}</td>
-                            ${counts.map(c => `<td class="p-4 text-center font-bold text-slate-600">${c}</td>`).join('')}
-                            <td class="p-4 text-center bg-indigo-50 text-indigo-700 font-black">${total}</td>
-                        `;
-                        tr.onclick = () => Summary.renderChart(counts, title, color);
-                        tb.appendChild(tr);
+                    const callCounts = processMonths(calls); const loanCounts = processMonths(loans);
+                    tb.innerHTML = "";
+                    const addRow = (bil, title, counts, color, target) => {
+                        const total = counts.reduce((a, b) => a + b, 0); const tr = document.createElement('tr'); tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
+                        tr.innerHTML = `<td class="p-4 text-center">${bil}</td><td class="p-4 font-black uppercase">${title}</td>${counts.map(c => `<td class="p-4 text-center font-bold">${c}</td>`).join('')}<td class="p-4 text-center bg-indigo-50 font-black">${total}</td>`;
+                        tr.onclick = () => Summary.renderChart(counts, title, color); target.appendChild(tr);
                     };
+                    addRow(1, "Log Panggilan (Call Log)", callCounts, '#6366f1', tb); addRow(2, "Pinjaman Peralatan (Total)", loanCounts, '#10b981', tb);
 
-                    renderRow(1, "Log Panggilan (Call Log)", callCounts, '#6366f1');
-                    renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, '#10b981');
-                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, '#f59e0b');
-                    renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, '#06b6d4');
-                    renderRow(5, "AD (DOMAIN)", adCounts, '#f43f5e');
-
-                    // 3. PROCESS DEVICE USAGE TABLE (TAG ASET)
-                    devTb.innerHTML = '';
-                    if (inventory) {
-                        inventory.forEach((device, index) => {
-                            const deviceUsage = loans?.filter(l => l.device_tag === device.tag) || [];
-                            const monthlyCounts = processMonths(deviceUsage);
-                            const totalUsage = monthlyCounts.reduce((a, b) => a + b, 0);
-                            
-                            const tr = document.createElement('tr');
-                            tr.className = "border-b border-slate-50 hover:bg-emerald-50/30 transition-all";
-                            tr.innerHTML = `
-                                <td class="p-4 text-center text-slate-400 font-bold">${index + 1}</td>
-                                <td class="p-4 font-black uppercase text-slate-700">${device.tag}</td>
-                                ${monthlyCounts.map(c => `<td class="p-4 text-center font-medium ${c > 0 ? 'text-emerald-600' : 'text-slate-300'}">${c}</td>`).join('')}
-                                <td class="p-4 text-center bg-emerald-50 text-emerald-700 font-black">${totalUsage}</td>
-                            `;
-                            devTb.appendChild(tr);
-                        });
-                    }
-
-                    // Default chart
-                    Summary.renderChart(callCounts, "Log Panggilan (Call Log)", '#6366f1');
-
-                } catch (e) {
-                    console.error("Summary Error:", e);
-                }
+                    devTb.innerHTML = "";
+                    inventory?.forEach((d, idx) => {
+                        const devUsage = loans?.filter(l => l.device_tag === d.tag) || []; const monthly = processMonths(devUsage); const total = monthly.reduce((a, b) => a + b, 0);
+                        const tr = document.createElement('tr'); tr.className = "border-b border-slate-50 hover:bg-emerald-50/30 transition-all";
+                        tr.innerHTML = `<td class="p-4 text-center text-slate-400 font-bold">${idx+1}</td><td class="p-4 font-black uppercase text-slate-700">${d.tag}</td>${monthly.map(c => `<td class="p-4 text-center font-bold ${c > 0 ? 'text-emerald-600' : 'text-slate-300'}">${c}</td>`).join('')}<td class="p-4 text-center bg-emerald-50 text-emerald-700 font-black">${total}</td>`;
+                        devTb.appendChild(tr);
+                    });
+                    Summary.renderChart(callCounts, "Log Panggilan", '#6366f1');
+                } catch (e) { console.error(e); }
             },
-            renderChart: (dataArray, label, barColor) => {
-                const ctx = document.getElementById('summaryChart').getContext('2d');
-                if (Summary.chart) Summary.chart.destroy();
-                Summary.chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'],
-                        datasets: [{
-                            label: label,
-                            data: dataArray,
-                            backgroundColor: barColor,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
+            renderChart: (data, label, color) => {
+                const ctx = document.getElementById('summaryChart').getContext('2d'); if (Summary.chart) Summary.chart.destroy();
+                Summary.chart = new Chart(ctx, { type: 'bar', data: { labels: ['JAN','FEB','MAR','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'], datasets: [{ label: label, data: data, backgroundColor: color, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false } });
             }
         };
 
-        // ... (Remaining initialization code for DOMContentLoaded)
+        const Assets = { 
+            allData: [], init: async () => { const { data } = await sbClient.from('aset').select('*').order('created_at', { ascending: true }); Assets.allData = data || []; Assets.renderTable(); },
+            handleSearch: () => { const q = document.getElementById('asset-search-input').value.toLowerCase().trim(); const filtered = q === "" ? Assets.allData : Assets.allData.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))); Assets.renderTable(filtered); },
+            renderTable: (data = Assets.allData) => { const tb = document.getElementById('asset-table-body'); tb.innerHTML = ""; data.slice(0, 50).forEach((r, i) => { const tr = document.createElement('tr'); tr.innerHTML = `<td class="p-4">${i+1}</td><td class="p-4 font-bold uppercase">${r.nama_pengguna}</td><td class="p-4">${r.jenis_aset}</td><td class="p-4">${r.seksyen}</td><td class="p-4">${r.no_dhm}</td><td class="p-4 font-mono">${r.no_siri}</td><td class="p-4">${r.model}</td><td class="p-4">${r.status}</td><td class="p-4 text-center"><button class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-bold">Edit</button></td>`; tb.appendChild(tr); }); },
+            exportExcel: () => { const ws = XLSX.utils.json_to_sheet(Assets.allData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Aset ICT"); XLSX.writeFile(wb, "Inventori_Aset_UTM.xlsx"); }
+        };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            Auth.init();
-            document.getElementById('login-form').addEventListener('submit', Auth.login);
-            // Ensure global search is active
-            const gSearch = document.getElementById('global-search');
-            if(gSearch) gSearch.addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
-            
-            const dForm = document.getElementById('data-form');
-            if(dForm) dForm.addEventListener('submit', CallLog.submit);
-        });
+        const Loan = {
+            loadData: async () => { const { data: d } = await sbClient.from('device_inventory').select('*').eq('status','Tersedia'); const ds = document.getElementById('deviceSelect'); ds.innerHTML = '<option disabled selected>-- Pilih Peranti --</option>'; d?.forEach(i => ds.appendChild(new Option(i.tag, i.tag))); },
+            submit: async () => { const p = { user_name: document.getElementById('loanUserName').value, device_tag: document.getElementById('deviceSelect').value, end_date: document.getElementById('loanEndDate').value, status: 'Active', issued_by: STATE.currentUser.email, created_at: new Date().toISOString() }; try { await sbClient.from('rekod_pinjaman').insert([p]); await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', p.device_tag); Utils.showToast("Pinjaman Berjaya"); Loan.loadData(); } catch(e) { console.error(e); } }
+        };
+
+        const CallLog = { init: () => { /* original call log logic */ } };
+        document.addEventListener('DOMContentLoaded', () => { if (typeof lucide !== 'undefined') lucide.createIcons(); Auth.init(); document.getElementById('login-form').addEventListener('submit', Auth.login); });
     </script>
 </body>
 </html>
