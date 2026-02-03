@@ -1668,42 +1668,81 @@
             }
         };
 
-        const LoanStats = {
+const LoanStats = {
             currentStats: [],
             init: async () => {
-                const tb = document.getElementById('loan-stats-body'); tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
+                const tb = document.getElementById('loan-stats-body'); 
+                tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
                 const currentYear = new Date().getFullYear();
                 try {
-                    const { data } = await sbClient.from('rekod_pinjaman').select('device_tag, created_at').gte('created_at', `${currentYear}-01-01`);
-                    if (!data) return tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center">Tiada data pinjaman tahun ini.</td></tr>';
+                    // Fetch both inventory and loan records to ensure ALL devices are listed
+                    const { data: inventory } = await sbClient.from('device_inventory').select('tag').order('tag', { ascending: true });
+                    const { data: loans } = await sbClient.from('rekod_pinjaman').select('device_tag, created_at').gte('created_at', `${currentYear}-01-01`);
+                    
+                    if (!inventory) return tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center">Tiada data inventori dijumpai.</td></tr>';
+
                     const statsMap = {};
-                    data.forEach(l => {
-                        const tag = l.device_tag; const month = new Date(l.created_at).getMonth();
-                        if (!statsMap[tag]) statsMap[tag] = new Array(12).fill(0);
-                        statsMap[tag][month]++;
+                    // Initialize every device from inventory with 0s
+                    inventory.forEach(item => {
+                        statsMap[item.tag] = new Array(12).fill(0);
                     });
+
+                    // Populate counts from loan history
+                    loans?.forEach(l => {
+                        if (statsMap[l.device_tag]) {
+                            const month = new Date(l.created_at).getMonth();
+                            statsMap[l.device_tag][month]++;
+                        }
+                    });
+
                     tb.innerHTML = '';
                     const sortedTags = Object.keys(statsMap).sort();
-                    LoanStats.currentStats = sortedTags.map(tag => {
+                    
+                    LoanStats.currentStats = sortedTags.map((tag, index) => {
                         const row = { tag, months: statsMap[tag], total: statsMap[tag].reduce((a,b)=>a+b, 0) };
-                        const tr = document.createElement('tr'); tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
-                        const tdTag = document.createElement('td'); tdTag.className = "p-4 font-black text-slate-800 uppercase"; tdTag.innerText = tag; tr.appendChild(tdTag);
-                        row.months.forEach(m => { const td = document.createElement('td'); td.className = "p-4 text-center text-slate-500"; td.innerText = m || '-'; tr.appendChild(td); });
-                        const tdTot = document.createElement('td'); tdTot.className = "p-4 text-center bg-indigo-50 text-indigo-700 font-black"; tdTot.innerText = row.total; tr.appendChild(tdTot);
-                        tb.appendChild(tr); return row;
+                        const tr = document.createElement('tr');
+                        // Added 'bg-slate-50/50' to even rows for color separation
+                        tr.className = `border-b border-slate-50 hover:bg-indigo-50/30 transition-all ${index % 2 === 0 ? '' : 'bg-slate-50/50'}`;
+                        
+                        const tdTag = document.createElement('td'); 
+                        tdTag.className = "p-4 font-black text-slate-800 uppercase border-r border-slate-50"; 
+                        tdTag.innerText = tag; 
+                        tr.appendChild(tdTag);
+
+                        row.months.forEach(m => { 
+                            const td = document.createElement('td'); 
+                            td.className = `p-4 text-center font-bold ${m > 0 ? 'text-indigo-600' : 'text-slate-300'}`; 
+                            td.innerText = m; // Shows 0 if not loaned
+                            tr.appendChild(td); 
+                        });
+
+                        const tdTot = document.createElement('td'); 
+                        tdTot.className = "p-4 text-center bg-indigo-50/50 text-indigo-700 font-black"; 
+                        tdTot.innerText = row.total; 
+                        tr.appendChild(tdTot);
+                        
+                        tb.appendChild(tr); 
+                        return row;
                     });
-                } catch (e) { tb.innerHTML = 'Ralat memuatkan statistik.'; }
+                } catch (e) { 
+                    console.error(e);
+                    tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center text-rose-500">Ralat memuatkan statistik.</td></tr>'; 
+                }
             },
             exportExcel: () => {
                 const formatted = LoanStats.currentStats.map(s => {
                     const obj = { 'Tag Aset': s.tag };
                     const months = ['JAN','FEB','MAR','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'];
                     months.forEach((m, idx) => obj[m] = s.months[idx]);
-                    obj['JUMLAH'] = s.total; return obj;
+                    obj['JUMLAH'] = s.total; 
+                    return obj;
                 });
-                const ws = XLSX.utils.json_to_sheet(formatted); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Statistik Pinjaman");
+                const ws = XLSX.utils.json_to_sheet(formatted); 
+                const wb = XLSX.utils.book_new(); 
+                XLSX.utils.book_append_sheet(wb, ws, "Statistik Pinjaman");
                 XLSX.writeFile(wb, "UTM_Loan_Stats.xlsx");
             }
+        };
         };
 
         const Summary = {
