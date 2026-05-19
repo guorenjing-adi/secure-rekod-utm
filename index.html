@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod IT UTM | MOE Edition</title>
+    <title>Sistem Rekod UTM | MOE Edition</title>
     
 <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co https://cdn.sheetjs.com; 
@@ -17,6 +17,8 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -261,8 +263,7 @@
                 </div>
             </div>
         </nav>
-
-        <main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
+<main class="flex-grow p-4 md:p-6 lg:p-10 max-w-[1920px] mx-auto w-full" id="app-main-content">
             <div id="call-log-module" class="w-full space-y-4 md:space-y-6">
                 <div id="it-dashboard" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1">
                     <div class="card-modern p-3 border-l-4 border-l-indigo-500 bg-white">
@@ -296,6 +297,20 @@
                         </div>
                         <div id="stat-total-personnel" class="text-xl md:text-2xl font-black text-slate-800">0</div>
                     </div>
+                </div>
+
+                <div class="flex items-center gap-3 p-4 bg-white shadow-sm rounded-xl border border-slate-100">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden">
+                    
+                    <button id="btn-insert-excel" type="button" class="btn-hover flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 text-xs font-bold uppercase tracking-wide">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        Insert Excel (SAP)
+                    </button>
+
+                    <button id="btn-sync-supabase" type="button" class="btn-hover flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 text-xs font-bold uppercase tracking-wide">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                        Sync to Database
+                    </button>
                 </div>
 
                 <div class="flex items-center justify-between mb-2">
@@ -519,6 +534,9 @@
                         <div id="loan-admin-section" class="hidden-section">
                             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                 <div class="lg:col-span-4 space-y-6 md:space-y-8">
+                                    <button onclick="Loan.copyStatusScreenshot()" class="btn-hover bg-slate-800 text-white px-6 py-3 rounded-xl text-[10px] md:text-xs font-black flex items-center gap-2 hover:bg-black shadow-xl shadow-slate-100 uppercase tracking-widest w-full md:w-auto justify-center">
+                                        <i data-lucide="camera" class="w-4 h-4"></i> Copy Screenshot (HP & Laptops)
+                                    </button>
                                     <button onclick="Loan.checkOverdueLoans(true)" class="btn-hover w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-rose-100 flex items-center justify-center gap-3 tracking-widest uppercase text-xs md:text-sm">
                                         <i data-lucide="alert-triangle" class="w-5 h-5"></i> Semak Pinjaman Lewat
                                     </button>
@@ -553,22 +571,21 @@
                                     <div class="table-container m-0 border-none rounded-none">
                                         <table class="w-full data-table">
                                             <thead class="bg-white border-b border-slate-100">
-                                                <tr>
+                                                <tr class="text-[10px] md:text-xs">
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tag Laptop/Aset</th>
                                                     <th class="p-4 text-left font-extrabold uppercase tracking-widest">Nama Peminjam</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tag Aset</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">No. Siri</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tarikh Pemulangan</th>
-                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Lokasi Kegunaan</th>
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Group</th>
+                                                    <th class="p-4 text-center font-extrabold uppercase tracking-widest">Availability</th>
+                                                    <th class="p-4 text-left font-extrabold uppercase tracking-widest">Tujuan</th>
                                                 </tr>
                                             </thead>
-                                            <tbody id="active-loans-body"></tbody>
+                                            <tbody id="active-loans-body" class="text-[10px] md:text-xs"></tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div id="loan-history-section" class="hidden-section space-y-6">
+<div id="loan-history-section" class="hidden-section space-y-6">
                             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div>
                                     <h6 class="font-extrabold text-slate-800 text-base md:text-lg tracking-tight">Arkib Rekod Pinjaman</h6>
@@ -681,6 +698,7 @@
                                         <th class="p-4 text-left">Status</th>
                                         <th class="p-4 text-left">Pengguna Dahulu</th>
                                         <th class="p-4 text-center">Tindakan</th>
+                                        <th class="p-4 text-center">Editor</th>
                                     </tr>
                                 </thead>
                                 <tbody id="asset-table-body" class="text-slate-600 text-[10px] md:text-xs font-medium"></tbody>
@@ -751,6 +769,7 @@
                                             <option>Perlu Disemak</option>
                                             <option>Dalam Proses Pelupusan</option>
                                             <option>Sewaan</option>
+                                            <option>Dipulangkan</option>
                                         </select>
                                     </div>
                                     <div class="md:col-span-2">
@@ -770,7 +789,20 @@
 
             <div id="summary-module" class="hidden-section w-full space-y-8 md:space-y-12">
                 <div class="card-modern p-6 md:p-10 flex flex-col items-center">
-                    <div class="text-center mb-8">
+                    <div class="flex items-center justify-between px-2 w-full max-w-4xl">
+                        <div class="flex gap-2 ml-auto">
+                            <button onclick="Summary.exportExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1.5 hover:bg-emerald-700 transition-all shadow-sm uppercase tracking-wide">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Excel
+                            </button>
+                            <button onclick="Summary.exportPDF()" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1.5 hover:bg-rose-700 transition-all shadow-sm uppercase tracking-wide">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                            </button>
+                            <button onclick="Summary.init()" class="bg-slate-100 p-2 rounded-lg hover:bg-indigo-100 text-indigo-600 transition-all">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center mb-8 mt-4">
                         <h2 class="text-xl md:text-3xl font-black text-slate-800 tracking-tighter uppercase">Statistik Bulanan <span id="summary-year-display"></span></h2>
                         <p class="text-slate-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-widest">Klik baris jadual untuk melihat carta bulanan terperinci</p>
                     </div>
@@ -779,7 +811,7 @@
                         <canvas id="summaryChart" class="max-h-[400px]"></canvas>
                     </div>
 
-                    <div class="w-full space-y-4">
+                    <div class="w-full max-w-4xl space-y-4">
                         <div class="flex items-center justify-between px-2">
                             <h3 class="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2">
                                 <i data-lucide="table-2" class="w-5 h-5 text-indigo-500"></i>
@@ -856,7 +888,7 @@
 
     <script>
         const CONFIG = { 
-            supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
+            supabaseUrl: 'https://ftjmbalkooihipuewqqb', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI',
             emailjsKey: null,
             emailjsServiceID: null,
@@ -1191,6 +1223,7 @@
                     else if(s === 'Perlu Dibaiki' || s === 'PERLU DIBAIKI') statusClass = 'bg-amber-100 text-amber-800';
                     else if(s === 'Perlu Disemak') statusClass = 'bg-blue-100 text-blue-800';
                     else if(s === 'Dalam Proses Pelupusan') statusClass = 'bg-rose-100 text-rose-800';
+                    else if(s === 'Dipulangkan') statusClass = 'bg-rose-100 text-rose-800';
                     statusSpan.className += ` ${statusClass}`;
                     statusSpan.innerText = s || '-';
                     tdStatus.appendChild(statusSpan);
@@ -1204,7 +1237,9 @@
                     btn.onclick = () => Assets.showEditForm(row.uuid);
                     tdAction.appendChild(btn);
                     tr.appendChild(tdAction);
+                    tr.appendChild(createCell(row.editor, "p-4 text-slate-400"));
                     tbody.appendChild(tr);
+                    
                 });
             },
             exportExcel: () => {
@@ -1243,36 +1278,64 @@
                 document.getElementById('inp-prevUser').value = row.pengguna_terdahulu || '';
                 document.getElementById('asset-form-overlay').classList.remove('hidden');
             },
-            handleSubmit: async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('asset-id').value;
-                const payload = {
-                    nama_pengguna: document.getElementById('inp-nama').value,
-                    jenis_aset: document.getElementById('inp-jenis').value,
-                    seksyen: document.getElementById('inp-seksyen').value,
-                    no_dhm: document.getElementById('inp-dhm').value,
-                    no_siri: document.getElementById('inp-siri').value,
-                    model: document.getElementById('inp-model').value,
-                    status: document.getElementById('inp-status').value,
-                    pengguna_terdahulu: document.getElementById('inp-prevUser').value,
-                    editor: STATE.currentUser.email,
-                    last_updated: new Date()
-                };
-                let error;
-                if (id) {
-                    const res = await sbClient.from('aset').update(payload).eq('uuid', id);
-                    error = res.error;
-                } else {
-                    const res = await sbClient.from('aset').insert([payload]);
-                    error = res.error;
-                }
-                if (error) alert("Ralat Simpanan: " + error.message);
-                else {
-                    Utils.showToast("Data aset berjaya disimpan!");
-                    Assets.fetchData(); 
-                    Assets.toggleForm(false);
-                }
+handleSubmit: async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('asset-id').value;
+            const payload = {
+                nama_pengguna: document.getElementById('inp-nama').value,
+                jenis_aset: document.getElementById('inp-jenis').value,
+                seksyen: document.getElementById('inp-seksyen').value,
+                no_dhm: document.getElementById('inp-dhm').value,
+                no_siri: document.getElementById('inp-siri').value,
+                model: document.getElementById('inp-model').value,
+                status: document.getElementById('inp-status').value,
+                pengguna_terdahulu: document.getElementById('inp-prevUser').value,
+                editor: STATE.currentUser.email,
+                last_updated: new Date()
+            };
+            
+            let error;
+            let returnedData = null;
+
+            if (id) {
+                // FORCE SUPABASE TO RETURN THE MODIFIED ROW IMMEDIATELY
+                const res = await sbClient.from('aset').update(payload).eq('uuid', id).select();
+                error = res.error;
+                returnedData = res.data;
+            } else {
+                const res = await sbClient.from('aset').insert([payload]).select();
+                error = res.error;
+                returnedData = res.data;
             }
+            
+            if (error) {
+                alert("Ralat Simpanan: " + error.message);
+            } else {
+                Utils.showToast("Data aset berjaya disimpan!");
+                
+                // If we got valid data back, update local cache directly to ensure UI updates instantly
+                if (returnedData && returnedData.length > 0) {
+                    if (id) {
+                        // Replace the old row with the freshly updated server row
+                        const index = Assets.allData.findIndex(r => r.uuid === id);
+                        if (index !== -1) {
+                            Assets.allData[index] = returnedData[0];
+                        }
+                    } else {
+                        // Append new rows to the top or bottom
+                        Assets.allData.push(returnedData[0]);
+                    }
+                    
+                    // Sync the search filter with the new state change
+                    Assets.handleSearch();
+                } else {
+                    // Fallback to network call if something went wrong with the return payload
+                    await Assets.fetchData();
+                }
+                
+                Assets.toggleForm(false);
+            }
+        } 
         };
 
         const CallLog = {
@@ -1344,7 +1407,7 @@
                     const loadingDiv = document.createElement('div');
                     loadingDiv.className = 'p-4 text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2';
                     loadingDiv.innerText = 'Mencari...'; dd.appendChild(loadingDiv);
-                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(8);
+                    const { data } = await sbClient.from('personnel').select('*').or(`nama.ilike.%${q}%,ic_number.ilike.%${q}%,kod_ptj.ilike.%${q}%`).limit(20);
                     dd.innerHTML = '';
                     if (!data || data.length === 0) {
                         const addNew = document.createElement('div');
@@ -1529,25 +1592,83 @@
                     Loan.loadActive();
                 } catch (e) {}
             },
+
             loadActive: async () => {
-                const { data } = await sbClient.from('rekod_pinjaman').select('*').eq('status','Active');
-                const body = document.getElementById('active-loans-body'); const today = Utils.getToday();
-                if (body) {
+                try {
+                    const { data: allInventory, error: invError } = await sbClient
+                        .from('device_inventory')
+                        .select('*')
+                        .order('tag', { ascending: true });
+
+                    if (invError) throw invError;
+
+                    const inventory = allInventory.filter(device => {
+                        const status = (device.status || "").toUpperCase();
+                        const tag = (device.tag || "");
+                        
+                        if (status.includes('RETURN') || status.includes('DELETE')) return false;
+                        
+                        const excludedTags = [
+                            'Laptop No.11', 'Laptop No.12', 'Laptop No.13', 
+                            'Laptop No.14', 'Laptop No.15', 'Laptop No.16', 'Laptop No.17'
+                        ];
+                        if (excludedTags.includes(tag)) return false;
+
+                        return true;
+                    });
+
+                    const { data: activeLoans } = await sbClient.from('rekod_pinjaman').select('*').eq('status', 'Active');
+                    
+                    const body = document.getElementById('active-loans-body');
+                    if (!body) return;
                     body.innerHTML = '';
-                    if (data) {
-                        data.forEach(l => {
-                            const isLate = l.end_date < today; const sn = STATE.deviceMap[l.device_tag] || '-';
-                            const tr = document.createElement('tr'); tr.className = isLate ? 'row-late hover:bg-slate-50 transition-all' : 'border-b border-slate-50 hover:bg-slate-50 transition-all';
-                            const tdName = document.createElement('td'); tdName.className = "p-4 uppercase font-bold text-slate-700"; tdName.innerText = l.user_name;
-                            const tdTag = document.createElement('td'); tdTag.className = "p-4 font-black text-indigo-600 tracking-widest"; tdTag.innerText = l.device_tag;
-                            const tdSn = document.createElement('td'); tdSn.className = "p-4 text-slate-400 font-bold"; tdSn.innerText = sn;
-                            const tdDate = document.createElement('td'); tdDate.className = `p-4 ${isLate ? 'text-late' : ''}`; tdDate.innerText = `${l.end_date} ${isLate ? '(lewat)' : ''}`;
-                            const tdUse = document.createElement('td'); tdUse.className = "p-4 text-slate-400 font-bold"; tdUse.innerText = l.usage_type;
-                            tr.appendChild(tdName); tr.appendChild(tdTag); tr.appendChild(tdSn); tr.appendChild(tdDate); tr.appendChild(tdUse); body.appendChild(tr);
-                        });
-                    }
+
+                    const getGroupName = (tag) => {
+                        if (tag.startsWith('HP09') || tag.startsWith('HP10') || tag.startsWith('HP11') || tag.startsWith('HP12')) return 'POOL NAZIRAN';
+                        if (tag.startsWith('HP13') || tag.startsWith('HP14') || tag.startsWith('HP15')) return 'POOL SP';
+                        return 'OPEN';
+                    };
+
+                    inventory.forEach(device => {
+                        const loan = activeLoans?.find(l => l.device_tag === device.tag);
+                        const isUsed = !!loan;
+                        const group = getGroupName(device.tag);
+                        const sn = device.serial || '-TIADA-';
+
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all";
+
+                        let groupClass = "p-4 font-bold ";
+                        if (group === 'POOL NAZIRAN') groupClass += "bg-cyan-50 text-cyan-700";
+                        else if (group === 'POOL SP') groupClass += "bg-blue-50 text-blue-700";
+                        else groupClass += "text-slate-500";
+
+                        const dueDateDisplay = isUsed ? `<div class="text-[10px] text-rose-500 font-bold mt-1">PULANG: ${loan.end_date}</div>` : '';
+
+                        tr.innerHTML = `
+                            <td class="p-4">
+                                <div class="font-bold text-slate-700">${device.tag}</div>
+                                <div class="text-[12px] text-slate-400 font-mono uppercase">${sn}</div>
+                            </td>
+                            <td class="p-4">
+                                <div class="font-bold text-slate-900 uppercase">${isUsed ? loan.user_name : ''}</div>
+                                ${dueDateDisplay}
+                            </td>
+                            <td class="${groupClass}">${group}</td>
+                            <td class="p-4 text-center">
+                                <span class="px-3 py-1 rounded font-black text-[9px] ${isUsed ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}">
+                                    ${isUsed ? 'IN USED' : 'AVAILABLE'}
+                                </span>
+                            </td>
+                            <td class="p-4 font-medium text-slate-500 uppercase">${isUsed ? (loan.usage_details || loan.usage_type) : ''}</td>
+                        `;
+                        body.appendChild(tr);
+                    });
+                } catch (e) {
+                    console.error("Visual status error:", e);
                 }
             },
+
             submit: async () => {
                 const p = { user_name: document.getElementById('loanUserName').value, device_tag: document.getElementById('deviceSelect').value, start_date: document.getElementById('loanStartDate').value, end_date: document.getElementById('loanEndDate').value, usage_type: document.getElementById('usageType').value, usage_details: document.getElementById('usageDetails').value, status: 'Active', issued_by: STATE.currentUser.email, created_at: new Date().toISOString() };
                 if(!p.user_name || !p.device_tag || !p.start_date || !p.end_date) return Utils.showToast("Sila lengkapkan maklumat.");
@@ -1665,29 +1786,108 @@
                     const { error } = await sbClient.from('device_inventory').insert([{ tag: t, type: tp, serial: sn, status: 'Tersedia', created_at: new Date().toISOString() }]); 
                     if(error) throw error; Utils.showToast("Aset didaftarkan"); Loan.loadData();
                 } catch(err) { alert(err.message); }
-            }
-        };
+            },
 
-const LoanStats = {
+            copyStatusScreenshot: async () => {
+                const targetTags = [
+                    'HP01', 'HP02', 'HP03', 'HP04', 'HP05', 'HP06', 'HP07', 'HP08', 'HP09', 'HP10', 
+                    'HP11', 'HP12', 'HP13', 'HP14', 'HP15', 'Laptop No.01', 'Laptop No.02', 
+                    'Laptop No.03', 'Laptop No.04', 'Laptop No.05', 'Laptop No.06', 'Laptop No.07', 
+                    'Laptop No.08', 'Laptop No.09', 'Laptop No.10'
+                ];
+
+                Utils.showToast("Menjana Screenshot... Sila tunggu.");
+
+                const tempContainer = document.createElement('div');
+                tempContainer.style.cssText = 'position:fixed; left:-9999px; top:0; min-width:850px; background:white; padding:15px; font-family:Arial, sans-serif;';
+                
+                const header = document.createElement('div');
+                header.innerHTML = `<h2 style="color:#1e293b; font-weight:bold; font-size:15px; margin-bottom:10px; border-bottom:2px solid black; padding-bottom:5px;">STATUS PINJAMAN ASET ICT</h2>`;
+                tempContainer.appendChild(header);
+
+                const tempTable = document.createElement('table');
+                tempTable.style.cssText = 'width:100%; border-collapse:collapse; font-size:11px; border:1px solid black; table-layout: auto;';
+                
+                tempTable.innerHTML = `
+                    <thead>
+                        <tr style="background:#f1f5f9; font-weight:bold;">
+                            <th style="padding:4px; text-align:left; border:1px solid black; width:90px; white-space: nowrap;">TAG LAPTOP</th>
+                            <th style="padding:4px; text-align:left; border:1px solid black; min-width:180px;">NAMA PEMINJAM</th>
+                            <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">GROUP</th>
+                            <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">AVAILABILITY</th>
+                            <th style="padding:4px; text-align:left; border:1px solid black; min-width:150px;">TUJUAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="temp-body"></tbody>
+                `;
+                
+                const tempBody = tempTable.querySelector('#temp-body');
+                const allRows = document.querySelectorAll('#active-loans-body tr');
+
+                allRows.forEach(row => {
+                    const tagCell = row.querySelector('td:first-child');
+                    if (!tagCell) return;
+
+                    const tagText = tagCell.innerText.trim().split('\n')[0];
+                    if (targetTags.includes(tagText)) {
+                        const cells = row.querySelectorAll('td');
+                        const isUsed = cells[3].innerText.includes('IN USED');
+                        const groupText = cells[2].innerText;
+                        
+                        let groupBg = '#ffffff';
+                        if(groupText.includes('NAZIRAN')) groupBg = '#d9ead3'; 
+                        else if(groupText.includes('POOL SP')) groupBg = '#cfe2f3'; 
+                        
+                        const statusBg = isUsed ? '#f6b26b' : '#b6d7a8';
+
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">${tagText}</td>
+                            <td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">${cells[1].innerText || ''}</td>
+                            <td style="padding:3px 5px; border:1px solid black; text-align:center; background:${groupBg}; font-weight:bold; vertical-align:middle; white-space: nowrap;">${groupText}</td>
+                            <td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:${statusBg}; vertical-align:middle; text-align:center; white-space: nowrap;">${isUsed ? 'IN USED' : 'AVAILABLE'}</td>
+                            <td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">${cells[4].innerText || ''}</td>
+                        `;
+                        tempBody.appendChild(newRow);
+                    }
+                });
+
+                tempContainer.appendChild(tempTable);
+                document.body.appendChild(tempContainer);
+
+                try {
+                    const canvas = await html2canvas(tempContainer, { scale: 2 });
+                    canvas.toBlob(async (blob) => {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        Utils.showToast("Screenshot Berjaya Disalin!");
+                    });
+                } catch (err) {
+                    Utils.showToast("Gagal menyalin screenshot.");
+                } finally {
+                    document.body.removeChild(tempContainer);
+                }
+
+             }
+        }; 
+
+        const LoanStats = {
             currentStats: [],
             init: async () => {
                 const tb = document.getElementById('loan-stats-body'); 
                 tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>';
                 const currentYear = new Date().getFullYear();
                 try {
-                    // Fetch both inventory and loan records to ensure ALL devices are listed
                     const { data: inventory } = await sbClient.from('device_inventory').select('tag').order('tag', { ascending: true });
                     const { data: loans } = await sbClient.from('rekod_pinjaman').select('device_tag, created_at').gte('created_at', `${currentYear}-01-01`);
                     
                     if (!inventory) return tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center">Tiada data inventori dijumpai.</td></tr>';
 
                     const statsMap = {};
-                    // Initialize every device from inventory with 0s
                     inventory.forEach(item => {
                         statsMap[item.tag] = new Array(12).fill(0);
                     });
 
-                    // Populate counts from loan history
                     loans?.forEach(l => {
                         if (statsMap[l.device_tag]) {
                             const month = new Date(l.created_at).getMonth();
@@ -1701,7 +1901,6 @@ const LoanStats = {
                     LoanStats.currentStats = sortedTags.map((tag, index) => {
                         const row = { tag, months: statsMap[tag], total: statsMap[tag].reduce((a,b)=>a+b, 0) };
                         const tr = document.createElement('tr');
-                        // Added 'bg-slate-50/50' to even rows for color separation
                         tr.className = `border-b border-slate-50 hover:bg-indigo-50/30 transition-all ${index % 2 === 0 ? '' : 'bg-slate-50/50'}`;
                         
                         const tdTag = document.createElement('td'); 
@@ -1712,7 +1911,7 @@ const LoanStats = {
                         row.months.forEach(m => { 
                             const td = document.createElement('td'); 
                             td.className = `p-4 text-center font-bold ${m > 0 ? 'text-indigo-600' : 'text-slate-300'}`; 
-                            td.innerText = m; // Shows 0 if not loaned
+                            td.innerText = m; 
                             tr.appendChild(td); 
                         });
 
@@ -1744,50 +1943,250 @@ const LoanStats = {
             }
         };
         
-
         const Summary = {
             chart: null,
+
+            exportExcel: () => {
+                const table = document.getElementById('summary-table');
+                if (!table) return Utils.showToast("Ralat: Jadual tidak dijumpai");
+                
+                const ws = XLSX.utils.table_to_sheet(table);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Ringkasan Tahunan");
+                XLSX.writeFile(wb, `Ringkasan_Statistik_UTM_${new Date().getFullYear()}.xlsx`);
+                Utils.showToast("Excel berjaya dimuat turun");
+            },
+
+            exportPDF: async () => {
+                const { jsPDF } = window.jspdf;
+                Utils.showToast("Menjana PDF... Sila tunggu.");
+                
+                const element = document.getElementById('summary-module');
+                
+                try {
+                    const canvas = await html2canvas(element, {
+                        scale: 2, 
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('l', 'mm', 'a4'); 
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+                    pdf.save(`Laporan_Statistik_UTM_${new Date().getFullYear()}.pdf`);
+                    Utils.showToast("PDF berjaya dimuat turun");
+                } catch (err) {
+                    console.error(err);
+                    Utils.showToast("Ralat menjana PDF");
+                }
+            },
+
             init: async () => {
-                const year = new Date().getFullYear(); document.getElementById('summary-year-display').innerText = year;
-                const tb = document.getElementById('summary-table-body'); tb.innerHTML = '';
-                const trLoad = document.createElement('tr'); const tdLoad = document.createElement('td'); tdLoad.colSpan = 15; tdLoad.className = "p-10 text-center";
-                const divLoad = document.createElement('div'); divLoad.className = "loader mx-auto"; tdLoad.appendChild(divLoad); trLoad.appendChild(tdLoad); tb.appendChild(trLoad);
+                const year = new Date().getFullYear(); 
+                document.getElementById('summary-year-display').innerText = year;
+                const tb = document.getElementById('summary-table-body'); 
+                tb.innerHTML = '';
+                
+                const trLoad = document.createElement('tr'); 
+                const tdLoad = document.createElement('td'); 
+                tdLoad.colSpan = 15; 
+                tdLoad.className = "p-10 text-center";
+                const divLoad = document.createElement('div'); 
+                divLoad.className = "loader mx-auto"; 
+                tdLoad.appendChild(divLoad); 
+                trLoad.appendChild(tdLoad); 
+                tb.appendChild(trLoad);
+
                 try {
                     const { data: calls } = await sbClient.from('rekod').select('created_at, sistem, komunikasi').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
                     const { data: loans } = await sbClient.from('rekod_pinjaman').select('created_at').gte('created_at', `${year}-01-01`).lte('created_at', `${year}-12-31`);
-                    const processMonths = (items) => { const counts = new Array(12).fill(0); items?.forEach(item => { const month = new Date(item.created_at).getMonth(); counts[month]++; }); return counts; };
-                    const callCounts = processMonths(calls); const loanCounts = processMonths(loans);
-                    const solmanCounts = processMonths(calls?.filter(r => (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')));
-                    const spmpCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('SPMP (MYGOVUC3.0\\GMAIL)')));
-                    const adCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('AD (DOMAIN)')));
-                    const callTotal = callCounts.reduce((a, b) => a + b, 0); const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
-                    const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0); const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0); const adTotal = adCounts.reduce((a, b) => a + b, 0);
-                    tb.innerHTML = '';
-                    const renderRow = (bil, title, counts, total, colorCode = null) => {
-                        const tr = document.createElement('tr'); tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
-                        const tdBil = document.createElement('td'); tdBil.className = "p-4 text-center text-slate-400 font-bold"; tdBil.innerText = bil; tr.appendChild(tdBil);
-                        const tdTitle = document.createElement('td'); tdTitle.className = "p-4 font-black uppercase text-slate-800"; tdTitle.innerText = title; tr.appendChild(tdTitle);
-                        counts.forEach(c => { const tdCount = document.createElement('td'); tdCount.className = "p-4 text-center font-bold text-slate-600"; tdCount.innerText = c; tr.appendChild(tdCount); });
-                        const tdTotal = document.createElement('td'); tdTotal.className = "p-4 text-center bg-indigo-50 text-indigo-700 font-black"; tdTotal.innerText = total; tr.appendChild(tdTotal);
-                        let chartColor = '#6366f1'; if (title.includes('Pinjaman')) chartColor = '#10b981'; else if (colorCode) chartColor = colorCode;
-                        tr.onclick = () => Summary.renderChart(counts, title, chartColor); tb.appendChild(tr);
+                    
+                    const processMonths = (items) => { 
+                        const counts = new Array(12).fill(0); 
+                        items?.forEach(item => { 
+                            const month = new Date(item.created_at).getMonth(); 
+                            counts[month]++; 
+                        }); 
+                        return counts; 
                     };
-                    renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
-                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
-                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
-                } catch (e) { tb.innerHTML = `Ralat memuatkan data ringkasan: ${e.message}`; }
+
+                    const callCounts = processMonths(calls); 
+                    const loanCounts = processMonths(loans);
+                    const solmanCounts = processMonths(calls?.filter(r => (r.sistem && r.sistem.toUpperCase() === 'SOLMAN') || (r.komunikasi && r.komunikasi.toUpperCase() === 'SOLMAN')));
+                    const spmpCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('SPMP')));
+                    const adCounts = processMonths(calls?.filter(r => r.sistem && r.sistem.includes('AD (DOMAIN)')));
+                    
+                    const callTotal = callCounts.reduce((a, b) => a + b, 0); 
+                    const loanTotal = loanCounts.reduce((a, b) => a + b, 0);
+                    const solmanTotal = solmanCounts.reduce((a, b) => a + b, 0); 
+                    const spmpTotal = spmpCounts.reduce((a, b) => a + b, 0); 
+                    const adTotal = adCounts.reduce((a, b) => a + b, 0);
+                    
+                    tb.innerHTML = '';
+
+                    const renderRow = (bil, title, counts, total, colorCode = null) => {
+                        const tr = document.createElement('tr'); 
+                        tr.className = "border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer";
+                        const tdBil = document.createElement('td'); 
+                        tdBil.className = "p-4 text-center text-slate-400 font-bold"; 
+                        tdBil.innerText = bil; 
+                        tr.appendChild(tdBil);
+                        
+                        const tdTitle = document.createElement('td'); 
+                        tdTitle.className = "p-4 font-black uppercase text-slate-800"; 
+                        tdTitle.innerText = title; 
+                        tr.appendChild(tdTitle);
+                        
+                        counts.forEach(c => { 
+                            const tdCount = document.createElement('td'); 
+                            tdCount.className = "p-4 text-center font-bold text-slate-600"; 
+                            tdCount.innerText = c; 
+                            tr.appendChild(tdCount); 
+                        });
+                        
+                        const tdTotal = document.createElement('td'); 
+                        tdTotal.className = "p-4 text-center bg-indigo-50 text-indigo-700 font-black"; 
+                        tdTotal.innerText = total; 
+                        tr.appendChild(tdTotal);
+                        
+                        let chartColor = '#6366f1'; 
+                        if (title.includes('Pinjaman')) chartColor = '#10b981'; 
+                        else if (colorCode) chartColor = colorCode;
+                        
+                        tr.onclick = () => Summary.renderChart(counts, title, chartColor); 
+                        tb.appendChild(tr);
+                    };
+
+                    renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); 
+                    renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
+                    renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); 
+                    renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
+                    renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); 
+                    
+                    Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
+                } catch (e) { 
+                    tb.innerHTML = `Ralat memuatkan data ringkasan: ${e.message}`; 
+                }
             },
+
             renderChart: (dataArray, label, customColor = null) => {
-                const ctx = document.getElementById('summaryChart').getContext('2d'); if (Summary.chart) Summary.chart.destroy();
+                const ctx = document.getElementById('summaryChart').getContext('2d'); 
+                if (Summary.chart) Summary.chart.destroy();
                 let barColor = customColor || '#6366f1';
                 Summary.chart = new Chart(ctx, {
                     type: 'bar',
-                    data: { labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'], datasets: [{ label: label, data: dataArray, backgroundColor: barColor, borderRadius: 6, borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'top', labels: { padding: 20, font: { size: 12, weight: 'bold', family: "'Inter', sans-serif" }, color: '#475569' } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { weight: 'bold' } } }, x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } } } }
+                    data: { 
+                        labels: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'], 
+                        datasets: [{ 
+                            label: label, 
+                            data: dataArray, 
+                            backgroundColor: barColor, 
+                            borderRadius: 6, 
+                            borderWidth: 0 
+                        }] 
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { 
+                            legend: { 
+                                display: true, 
+                                position: 'top', 
+                                labels: { padding: 20, font: { size: 12, weight: 'bold' }, color: '#475569' } 
+                            } 
+                        }, 
+                        scales: { 
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, 
+                            x: { grid: { display: false } } 
+                        } 
+                    }
                 });
             }
-        };        
-        
+        };
+
+        // NEW: Excel to Supabase Sync Object
+        const PersonnelSync = {
+            dataToSync: [],
+
+            init: function() {
+                document.getElementById('btn-insert-excel').addEventListener('click', () => {
+                    document.getElementById('excel-file-input').click();
+                });
+                document.getElementById('excel-file-input').addEventListener('change', this.handleFileRead.bind(this));
+                document.getElementById('btn-sync-supabase').addEventListener('click', this.syncData.bind(this));
+            },
+
+            handleFileRead: function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    this.dataToSync = json.map(row => ({
+                        ic_number: row['User name'] ? String(row['User name']) : null,
+                        nama: row['Complete name'] || null,
+                        telefon: row['Telephone'] ? String(row['Telephone']) : null,
+                        emel: row['E-Mail Address'] || null,
+                        gred: row['Job Grade'] || null,
+                        kod_ptj: row['Functional Area'] ? String(row['Functional Area']) : null,
+                        department: row['Department'] || null
+                    }));
+
+                    Utils.showToast(`Successfully mapped ${this.dataToSync.length} rows from Excel. Press 'Sync to Database' to upload.`);
+                    document.getElementById('excel-file-input').value = "";
+                };
+                reader.readAsArrayBuffer(file);
+            },
+
+            syncData: async function() {
+                if (this.dataToSync.length === 0) {
+                    alert("No data to sync. Please insert an Excel file first.");
+                    return;
+                }
+
+                try {
+                    const syncBtn = document.getElementById('btn-sync-supabase');
+                    const originalText = syncBtn.innerHTML;
+                    syncBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Syncing...';
+                    syncBtn.disabled = true;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                    const { data, error } = await sbClient
+                        .from('personnel')
+                        .insert(this.dataToSync);
+
+                    if (error) throw error;
+
+                    Utils.showToast("Success! Excel data has been successfully synced to the personnel table.");
+                    this.dataToSync = []; 
+                    
+                    syncBtn.innerHTML = originalText;
+                    syncBtn.disabled = false;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                } catch (error) {
+                    console.error("Error syncing to Supabase:", error);
+                    alert("Failed to sync data: " + error.message);
+                    
+                    const syncBtn = document.getElementById('btn-sync-supabase');
+                    syncBtn.innerHTML = '<i data-lucide="upload-cloud" class="w-4 h-4"></i> Sync to Database';
+                    syncBtn.disabled = false;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
             Auth.init();
@@ -1795,7 +2194,10 @@ const LoanStats = {
             document.getElementById('register-form').addEventListener('submit', Auth.register);
             document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
             document.getElementById('data-form').addEventListener('submit', CallLog.submit);
+            
+            // Initialize the new PersonnelSync module
+            PersonnelSync.init();
         });
     </script>
 </body>
-</html>
+</html>                               
