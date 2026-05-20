@@ -2108,7 +2108,7 @@ handleSubmit: async (e) => {
             }
         };
 
-// NEW: Excel to Supabase Sync Object
+// NEW: Excel to Supabase Sync Object (Bulletproof Version)
         const PersonnelSync = {
             dataToSync: [],
 
@@ -2134,14 +2134,15 @@ handleSubmit: async (e) => {
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
                     this.dataToSync = json.map(row => ({
-                        ic_number: row['User name'] ? String(row['User name']) : null,
-                        nama: row['Complete name'] || null,
-                        telefon: row['Telephone'] ? String(row['Telephone']) : null,
-                        emel: row['E-Mail Address'] || null,
-                        gred: row['Job Grade'] || null,
-                        kod_ptj: row['Functional Area'] ? String(row['Functional Area']) : null,
-                        department: row['Department'] || null
-                    })).filter(row => row.ic_number !== null); // Drop rows that don't have an IC
+                        // Force string and trim any hidden spaces from SAP
+                        ic_number: row['User name'] ? String(row['User name']).trim() : null,
+                        nama: row['Complete name'] ? String(row['Complete name']).trim() : null,
+                        telefon: row['Telephone'] ? String(row['Telephone']).trim() : null,
+                        emel: row['E-Mail Address'] ? String(row['E-Mail Address']).trim() : null,
+                        gred: row['Job Grade'] ? String(row['Job Grade']).trim() : null,
+                        kod_ptj: row['Functional Area'] ? String(row['Functional Area']).trim() : null,
+                        department: row['Department'] ? String(row['Department']).trim() : null
+                    })).filter(row => row.ic_number !== null && row.ic_number !== ""); 
 
                     Utils.showToast(`Successfully mapped ${this.dataToSync.length} valid rows from Excel. Press 'Sync to Database' to upload.`);
                     document.getElementById('excel-file-input').value = "";
@@ -2162,21 +2163,42 @@ handleSubmit: async (e) => {
                     syncBtn.disabled = true;
                     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-                    // 1. Fetch existing IC numbers from Supabase to check for duplicates
-                    const { data: existingData, error: fetchError } = await sbClient
-                        .from('personnel')
-                        .select('ic_number');
+                    // 1. Remove internal duplicates from the Excel file itself
+                    const uniqueExcelData = [];
+                    const seenInExcel = new Set();
+                    
+                    for (const row of this.dataToSync) {
+                        if (!seenInExcel.has(row.ic_number)) {
+                            seenInExcel.add(row.ic_number);
+                            uniqueExcelData.push(row);
+                        }
+                    }
+                    
+                    const excelIcs = Array.from(seenInExcel);
+                    const existingIcsInDb = new Set();
+
+                    // 2. Query Supabase in chunks to bypass the 1000-row limit
+                    // We only ask Supabase about the specific ICs we found in the Excel file
+                    const chunkSize = 200; 
+                    for (let i = 0; i < excelIcs.length; i += chunkSize) {
+                        const chunk = excelIcs.slice(i, i + chunkSize);
                         
-                    if (fetchError) throw fetchError;
+                        const { data: matchedData, error: fetchError } = await sbClient
+                            .from('personnel')
+                            .select('ic_number')
+                            .in('ic_number', chunk);
+                            
+                        if (fetchError) throw fetchError;
+                        
+                        // Add found ICs to our database existing list
+                        matchedData.forEach(row => existingIcsInDb.add(String(row.ic_number).trim()));
+                    }
 
-                    // Create a Set of existing IC numbers for lightning-fast comparison
-                    const existingIcs = new Set(existingData.map(row => String(row.ic_number)));
-
-                    // 2. Filter out duplicates (keep only records where IC is NOT in the database)
-                    const newRecords = this.dataToSync.filter(row => !existingIcs.has(row.ic_number));
+                    // 3. Filter out records that already exist in Supabase
+                    const newRecords = uniqueExcelData.filter(row => !existingIcsInDb.has(row.ic_number));
                     const duplicateCount = this.dataToSync.length - newRecords.length;
 
-                    // 3. Insert only the new records
+                    // 4. Insert only the truly new records
                     if (newRecords.length > 0) {
                         const { error: insertError } = await sbClient
                             .from('personnel')
@@ -2185,12 +2207,12 @@ handleSubmit: async (e) => {
                         if (insertError) throw insertError;
                         
                         Utils.showToast(`Success! Inserted ${newRecords.length} new records. Ignored ${duplicateCount} duplicates.`);
-                        Dashboard.refresh(); // Update dashboard stats with new personnel count
+                        Dashboard.refresh(); 
                     } else {
-                        Utils.showToast(`No new records to insert. All ${duplicateCount} records already exist in the database.`);
+                        Utils.showToast(`No new records to insert. All ${duplicateCount} records already exist.`);
                     }
 
-                    this.dataToSync = []; // Clear array after successful sync
+                    this.dataToSync = []; 
                     
                     // Restore button UI
                     syncBtn.innerHTML = originalText;
@@ -2201,7 +2223,6 @@ handleSubmit: async (e) => {
                     console.error("Error syncing to Supabase:", error);
                     alert("Failed to sync data: " + error.message);
                     
-                    // Restore button UI on fail
                     const syncBtn = document.getElementById('btn-sync-supabase');
                     syncBtn.innerHTML = '<i data-lucide="upload-cloud" class="w-4 h-4"></i> Sync to Database';
                     syncBtn.disabled = false;
@@ -2209,7 +2230,6 @@ handleSubmit: async (e) => {
                 }
             }
         };
-
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
             Auth.init();
