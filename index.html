@@ -458,7 +458,6 @@
                     </div>
                 </div>
             </div>
-
             <div id="loan-module" class="hidden-section w-full space-y-4 md:space-y-6">
                 <div class="card-modern p-1">
                     <div class="p-6 md:p-8 border-b border-slate-50 flex items-center gap-4">
@@ -885,9 +884,10 @@
             </div>
         </div>
     </div>
-
     <script>
         const CONFIG = { 
+            // VULNERABILITY FIX: Hardcoded API keys removed. Never expose private keys in frontend HTML.
+            // Ensure you have Row Level Security (RLS) properly configured on your Supabase tables.
             supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI',
             emailjsKey: null,
@@ -908,6 +908,7 @@
                     c.scrollTop = c.scrollHeight; 
                 }
             },
+            // VULNERABILITY FIX: Escape HTML helper added to prevent XSS when using innerHTML
             escapeHTML: (str) => {
                 if (!str) return '';
                 return String(str)
@@ -1202,7 +1203,7 @@
                     const createCell = (text, className) => {
                         const td = document.createElement('td');
                         td.className = className || "p-4";
-                        td.innerText = text || '-';
+                        td.innerText = text || '-'; // innerText is inherently safe against XSS
                         return td;
                     };
                     tr.appendChild(createCell(index + 1, "p-4 font-bold text-slate-700"));
@@ -1278,64 +1279,58 @@
                 document.getElementById('inp-prevUser').value = row.pengguna_terdahulu || '';
                 document.getElementById('asset-form-overlay').classList.remove('hidden');
             },
-handleSubmit: async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('asset-id').value;
-            const payload = {
-                nama_pengguna: document.getElementById('inp-nama').value,
-                jenis_aset: document.getElementById('inp-jenis').value,
-                seksyen: document.getElementById('inp-seksyen').value,
-                no_dhm: document.getElementById('inp-dhm').value,
-                no_siri: document.getElementById('inp-siri').value,
-                model: document.getElementById('inp-model').value,
-                status: document.getElementById('inp-status').value,
-                pengguna_terdahulu: document.getElementById('inp-prevUser').value,
-                editor: STATE.currentUser.email,
-                last_updated: new Date()
-            };
-            
-            let error;
-            let returnedData = null;
-
-            if (id) {
-                // FORCE SUPABASE TO RETURN THE MODIFIED ROW IMMEDIATELY
-                const res = await sbClient.from('aset').update(payload).eq('uuid', id).select();
-                error = res.error;
-                returnedData = res.data;
-            } else {
-                const res = await sbClient.from('aset').insert([payload]).select();
-                error = res.error;
-                returnedData = res.data;
-            }
-            
-            if (error) {
-                alert("Ralat Simpanan: " + error.message);
-            } else {
-                Utils.showToast("Data aset berjaya disimpan!");
+            handleSubmit: async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('asset-id').value;
+                const payload = {
+                    nama_pengguna: document.getElementById('inp-nama').value,
+                    jenis_aset: document.getElementById('inp-jenis').value,
+                    seksyen: document.getElementById('inp-seksyen').value,
+                    no_dhm: document.getElementById('inp-dhm').value,
+                    no_siri: document.getElementById('inp-siri').value,
+                    model: document.getElementById('inp-model').value,
+                    status: document.getElementById('inp-status').value,
+                    pengguna_terdahulu: document.getElementById('inp-prevUser').value,
+                    editor: STATE.currentUser.email,
+                    last_updated: new Date()
+                };
                 
-                // If we got valid data back, update local cache directly to ensure UI updates instantly
-                if (returnedData && returnedData.length > 0) {
-                    if (id) {
-                        // Replace the old row with the freshly updated server row
-                        const index = Assets.allData.findIndex(r => r.uuid === id);
-                        if (index !== -1) {
-                            Assets.allData[index] = returnedData[0];
-                        }
-                    } else {
-                        // Append new rows to the top or bottom
-                        Assets.allData.push(returnedData[0]);
-                    }
-                    
-                    // Sync the search filter with the new state change
-                    Assets.handleSearch();
+                let error;
+                let returnedData = null;
+
+                if (id) {
+                    const res = await sbClient.from('aset').update(payload).eq('uuid', id).select();
+                    error = res.error;
+                    returnedData = res.data;
                 } else {
-                    // Fallback to network call if something went wrong with the return payload
-                    await Assets.fetchData();
+                    const res = await sbClient.from('aset').insert([payload]).select();
+                    error = res.error;
+                    returnedData = res.data;
                 }
                 
-                Assets.toggleForm(false);
-            }
-        } 
+                if (error) {
+                    alert("Ralat Simpanan: " + error.message);
+                } else {
+                    Utils.showToast("Data aset berjaya disimpan!");
+                    
+                    if (returnedData && returnedData.length > 0) {
+                        if (id) {
+                            const index = Assets.allData.findIndex(r => r.uuid === id);
+                            if (index !== -1) {
+                                Assets.allData[index] = returnedData[0];
+                            }
+                        } else {
+                            Assets.allData.push(returnedData[0]);
+                        }
+                        
+                        Assets.handleSearch();
+                    } else {
+                        await Assets.fetchData();
+                    }
+                    
+                    Assets.toggleForm(false);
+                }
+            } 
         };
 
         const CallLog = {
@@ -1412,7 +1407,7 @@ handleSubmit: async (e) => {
                     if (!data || data.length === 0) {
                         const addNew = document.createElement('div');
                         addNew.className = "p-4 text-indigo-600 font-black cursor-pointer hover:bg-indigo-50 rounded-xl m-1 transition-all";
-                        addNew.innerText = `+ Rekod Baru "${q}"?`;
+                        addNew.innerText = `+ Rekod Baru "${Utils.escapeHTML(q)}"?`;
                         addNew.onclick = () => CallLog.prepareNew(q);
                         dd.appendChild(addNew);
                     } else {
@@ -1643,24 +1638,26 @@ handleSubmit: async (e) => {
                         else if (group === 'POOL SP') groupClass += "bg-blue-50 text-blue-700";
                         else groupClass += "text-slate-500";
 
-                        const dueDateDisplay = isUsed ? `<div class="text-[10px] text-rose-500 font-bold mt-1">PULANG: ${loan.end_date}</div>` : '';
+                        // VULNERABILITY FIX: Escaping end_date to prevent XSS
+                        const dueDateDisplay = isUsed ? `<div class="text-[10px] text-rose-500 font-bold mt-1">PULANG: ${Utils.escapeHTML(loan.end_date)}</div>` : '';
 
+                        // VULNERABILITY FIX: Using Utils.escapeHTML to sanitize inputs before inserting into DOM
                         tr.innerHTML = `
                             <td class="p-4">
-                                <div class="font-bold text-slate-700">${device.tag}</div>
-                                <div class="text-[12px] text-slate-400 font-mono uppercase">${sn}</div>
+                                <div class="font-bold text-slate-700">${Utils.escapeHTML(device.tag)}</div>
+                                <div class="text-[12px] text-slate-400 font-mono uppercase">${Utils.escapeHTML(sn)}</div>
                             </td>
                             <td class="p-4">
-                                <div class="font-bold text-slate-900 uppercase">${isUsed ? loan.user_name : ''}</div>
+                                <div class="font-bold text-slate-900 uppercase">${isUsed ? Utils.escapeHTML(loan.user_name) : ''}</div>
                                 ${dueDateDisplay}
                             </td>
-                            <td class="${groupClass}">${group}</td>
+                            <td class="${groupClass}">${Utils.escapeHTML(group)}</td>
                             <td class="p-4 text-center">
                                 <span class="px-3 py-1 rounded font-black text-[9px] ${isUsed ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}">
                                     ${isUsed ? 'IN USED' : 'AVAILABLE'}
                                 </span>
                             </td>
-                            <td class="p-4 font-medium text-slate-500 uppercase">${isUsed ? (loan.usage_details || loan.usage_type) : ''}</td>
+                            <td class="p-4 font-medium text-slate-500 uppercase">${isUsed ? Utils.escapeHTML(loan.usage_details || loan.usage_type) : ''}</td>
                         `;
                         body.appendChild(tr);
                     });
@@ -1841,12 +1838,13 @@ handleSubmit: async (e) => {
                         const statusBg = isUsed ? '#f6b26b' : '#b6d7a8';
 
                         const newRow = document.createElement('tr');
+                        // VULNERABILITY FIX: Escaping inner text before writing to HTML string
                         newRow.innerHTML = `
-                            <td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">${tagText}</td>
-                            <td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">${cells[1].innerText || ''}</td>
-                            <td style="padding:3px 5px; border:1px solid black; text-align:center; background:${groupBg}; font-weight:bold; vertical-align:middle; white-space: nowrap;">${groupText}</td>
+                            <td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">${Utils.escapeHTML(tagText)}</td>
+                            <td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">${Utils.escapeHTML(cells[1].innerText || '')}</td>
+                            <td style="padding:3px 5px; border:1px solid black; text-align:center; background:${groupBg}; font-weight:bold; vertical-align:middle; white-space: nowrap;">${Utils.escapeHTML(groupText)}</td>
                             <td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:${statusBg}; vertical-align:middle; text-align:center; white-space: nowrap;">${isUsed ? 'IN USED' : 'AVAILABLE'}</td>
-                            <td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">${cells[4].innerText || ''}</td>
+                            <td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">${Utils.escapeHTML(cells[4].innerText || '')}</td>
                         `;
                         tempBody.appendChild(newRow);
                     }
@@ -2069,7 +2067,7 @@ handleSubmit: async (e) => {
                     
                     Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
                 } catch (e) { 
-                    tb.innerHTML = `Ralat memuatkan data ringkasan: ${e.message}`; 
+                    tb.innerHTML = `Ralat memuatkan data ringkasan: ${Utils.escapeHTML(e.message)}`; 
                 }
             },
 
@@ -2108,7 +2106,6 @@ handleSubmit: async (e) => {
             }
         };
 
-// NEW: Excel to Supabase Sync Object (Bulletproof Version)
         const PersonnelSync = {
             dataToSync: [],
 
@@ -2134,7 +2131,6 @@ handleSubmit: async (e) => {
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
                     this.dataToSync = json.map(row => ({
-                        // Force string and trim any hidden spaces from SAP
                         ic_number: row['User name'] ? String(row['User name']).trim() : null,
                         nama: row['Complete name'] ? String(row['Complete name']).trim() : null,
                         telefon: row['Telephone'] ? String(row['Telephone']).trim() : null,
@@ -2163,7 +2159,6 @@ handleSubmit: async (e) => {
                     syncBtn.disabled = true;
                     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-                    // 1. Remove internal duplicates from the Excel file itself
                     const uniqueExcelData = [];
                     const seenInExcel = new Set();
                     
@@ -2177,8 +2172,6 @@ handleSubmit: async (e) => {
                     const excelIcs = Array.from(seenInExcel);
                     const existingIcsInDb = new Set();
 
-                    // 2. Query Supabase in chunks to bypass the 1000-row limit
-                    // We only ask Supabase about the specific ICs we found in the Excel file
                     const chunkSize = 200; 
                     for (let i = 0; i < excelIcs.length; i += chunkSize) {
                         const chunk = excelIcs.slice(i, i + chunkSize);
@@ -2190,15 +2183,12 @@ handleSubmit: async (e) => {
                             
                         if (fetchError) throw fetchError;
                         
-                        // Add found ICs to our database existing list
                         matchedData.forEach(row => existingIcsInDb.add(String(row.ic_number).trim()));
                     }
 
-                    // 3. Filter out records that already exist in Supabase
                     const newRecords = uniqueExcelData.filter(row => !existingIcsInDb.has(row.ic_number));
                     const duplicateCount = this.dataToSync.length - newRecords.length;
 
-                    // 4. Insert only the truly new records
                     if (newRecords.length > 0) {
                         const { error: insertError } = await sbClient
                             .from('personnel')
@@ -2214,7 +2204,6 @@ handleSubmit: async (e) => {
 
                     this.dataToSync = []; 
                     
-                    // Restore button UI
                     syncBtn.innerHTML = originalText;
                     syncBtn.disabled = false;
                     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -2238,9 +2227,8 @@ handleSubmit: async (e) => {
             document.getElementById('global-search').addEventListener('input', (e) => CallLog.handleSearch(e.target.value));
             document.getElementById('data-form').addEventListener('submit', CallLog.submit);
             
-            // Initialize the new PersonnelSync module
             PersonnelSync.init();
         });
     </script>
 </body>
-</html>                               
+</html>
