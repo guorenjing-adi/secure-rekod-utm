@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Rekod UTM | MOE Edition</title>
+    <title>Sistem Rekod UTM | MOE Edition (Secured)</title>
     
 <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.supabase.co https://cdn.sheetjs.com; 
+    default-src 'self'; 
     style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; 
     script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.sheetjs.com;
-    connect-src 'self' https://*.supabase.co https://api.emailjs.com https://cdn.jsdelivr.net https://unpkg.com;
+    connect-src 'self' https://ftjmbalkooihipuewqqb.supabase.co https://api.emailjs.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
 ">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -130,12 +133,6 @@
         
         th.draggable-header { cursor: grab; position: relative; transition: background-color 0.2s; }
         th.drag-over { border-left: 3px solid var(--accent); background-color: #f5f3ff; }
-        
-        #debug-console { 
-            background: #0f172a; color: #10b981; font-family: 'Fira Code', monospace; 
-            height: 120px; overflow-y: auto; font-size: 11px; padding: 12px; 
-            border-radius: 0.75rem; border: 1px solid #1e293b;
-        }
 
         .btn-hover { transition: transform 0.1s ease, background-color 0.2s ease; }
         .btn-hover:active { transform: scale(0.97); }
@@ -215,7 +212,6 @@
                     <button type="button" onclick="Auth.toggleForm('login')" class="text-slate-400 text-sm font-bold hover:text-slate-600">Kembali ke Log Masuk</button>
                 </div>
             </form>
-            <div id="debug-console" class="mt-8"><div>> System ready. Waiting for auth...</div></div>
         </div>
     </div>
 
@@ -886,8 +882,8 @@
     </div>
     <script>
         const CONFIG = { 
-            // VULNERABILITY FIX: Hardcoded API keys removed. Never expose private keys in frontend HTML.
-            // Ensure you have Row Level Security (RLS) properly configured on your Supabase tables.
+            // SECURITY NOTE: In a real environment, DO NOT expose sensitive keys.
+            // RLS (Row Level Security) MUST be properly configured in Supabase to protect data!
             supabaseUrl: 'https://ftjmbalkooihipuewqqb.supabase.co', 
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0am1iYWxrb29paGlwdWV3cXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjcyOTgsImV4cCI6MjA4MzQ0MzI5OH0.AtQmyHJBXca1bDJYfrRox7BvhH0cfds_Pjvsj69ZyfI',
             emailjsKey: null,
@@ -900,15 +896,9 @@
 
         const Utils = {
             log: (msg) => { 
-                const c = document.getElementById('debug-console'); 
-                if(c) { 
-                    const div = document.createElement('div');
-                    div.innerText = `> ${msg}`;
-                    c.appendChild(div);
-                    c.scrollTop = c.scrollHeight; 
-                }
+                // Console logging only for debugging instead of appending to visible DOM
+                console.log(`System Log: ${msg}`);
             },
-            // VULNERABILITY FIX: Escape HTML helper added to prevent XSS when using innerHTML
             escapeHTML: (str) => {
                 if (!str) return '';
                 return String(str)
@@ -1006,7 +996,7 @@
                     const { count: personnelCount } = await sbClient.from('personnel').select('*', { count: 'exact', head: true });
                     document.getElementById('stat-total-personnel').innerText = personnelCount || 0;
                 } catch (e) {
-                    Utils.log("Dashboard Error: " + e.message);
+                    Utils.log("Dashboard Error");
                 }
             }
         };
@@ -1032,7 +1022,7 @@
                 e.preventDefault();
                 const btn = document.getElementById('login-btn'); btn.classList.add('loading');
                 const { data, error } = await sbClient.auth.signInWithPassword({ email: document.getElementById('email').value.trim(), password: document.getElementById('password').value });
-                if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = error.message; document.getElementById('login-error').classList.remove('hidden'); }
+                if (error) { btn.classList.remove('loading'); document.getElementById('login-error').innerText = "Akses Ditolak / Ralat Log Masuk"; document.getElementById('login-error').classList.remove('hidden'); }
                 else Auth.onAuth(data.user);
             },
             register: async (e) => {
@@ -1045,7 +1035,7 @@
                 btn.classList.remove('loading');
                 if (error) {
                     const errDiv = document.getElementById('reg-error');
-                    errDiv.innerText = error.message;
+                    errDiv.innerText = "Ralat pendaftaran berlaku.";
                     errDiv.classList.remove('hidden');
                 } else {
                     const succDiv = document.getElementById('reg-success');
@@ -1158,7 +1148,7 @@
                 tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center"><div class="loader mx-auto"></div></td></tr>`;
                 const { data, error } = await sbClient.from('aset').select('*').order('created_at', { ascending: true });
                 if (error) {
-                    tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Error: ${Utils.escapeHTML(error.message)}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-rose-500 font-bold">Ralat memuatkan rekod.</td></tr>`;
                 } else {
                     Assets.allData = data || [];
                     Assets.filteredData = Assets.allData;
@@ -1194,7 +1184,7 @@
                 }
                 document.getElementById('asset-record-count').innerText = `${displayData.length}/${Assets.filteredData.length}`;
                 if (displayData.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan='10' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>";
+                    tbody.innerHTML = DOMPurify.sanitize("<tr><td colspan='10' class='text-center py-8 text-slate-400'>Tiada rekod dijumpai.</td></tr>");
                     return;
                 }
                 displayData.forEach((row, index) => {
@@ -1309,7 +1299,7 @@
                 }
                 
                 if (error) {
-                    alert("Ralat Simpanan: " + error.message);
+                    Utils.showToast("Ralat Simpanan. Sila cuba sebentar lagi.");
                 } else {
                     Utils.showToast("Data aset berjaya disimpan!");
                     
@@ -1465,6 +1455,8 @@
                 if(!error) { 
                     CallLog.updateMasterData(); Utils.showToast("Rekod disimpan"); 
                     document.getElementById('data-form').reset(); CallLog.checkValidity(); Dashboard.refresh();
+                } else {
+                    Utils.showToast("Ralat penyimpanan rekod.");
                 }
             }
         };
@@ -1638,27 +1630,50 @@
                         else if (group === 'POOL SP') groupClass += "bg-blue-50 text-blue-700";
                         else groupClass += "text-slate-500";
 
-                        // VULNERABILITY FIX: Escaping end_date to prevent XSS
-                        const dueDateDisplay = isUsed ? `<div class="text-[10px] text-rose-500 font-bold mt-1">PULANG: ${Utils.escapeHTML(loan.end_date)}</div>` : '';
+                        const td1 = document.createElement('td');
+                        td1.className = "p-4";
+                        const dTag = document.createElement('div');
+                        dTag.className = "font-bold text-slate-700";
+                        dTag.innerText = device.tag;
+                        const dSn = document.createElement('div');
+                        dSn.className = "text-[12px] text-slate-400 font-mono uppercase";
+                        dSn.innerText = sn;
+                        td1.appendChild(dTag);
+                        td1.appendChild(dSn);
+                        tr.appendChild(td1);
 
-                        // VULNERABILITY FIX: Using Utils.escapeHTML to sanitize inputs before inserting into DOM
-                        tr.innerHTML = `
-                            <td class="p-4">
-                                <div class="font-bold text-slate-700">${Utils.escapeHTML(device.tag)}</div>
-                                <div class="text-[12px] text-slate-400 font-mono uppercase">${Utils.escapeHTML(sn)}</div>
-                            </td>
-                            <td class="p-4">
-                                <div class="font-bold text-slate-900 uppercase">${isUsed ? Utils.escapeHTML(loan.user_name) : ''}</div>
-                                ${dueDateDisplay}
-                            </td>
-                            <td class="${groupClass}">${Utils.escapeHTML(group)}</td>
-                            <td class="p-4 text-center">
-                                <span class="px-3 py-1 rounded font-black text-[9px] ${isUsed ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}">
-                                    ${isUsed ? 'IN USED' : 'AVAILABLE'}
-                                </span>
-                            </td>
-                            <td class="p-4 font-medium text-slate-500 uppercase">${isUsed ? Utils.escapeHTML(loan.usage_details || loan.usage_type) : ''}</td>
-                        `;
+                        const td2 = document.createElement('td');
+                        td2.className = "p-4";
+                        const dUser = document.createElement('div');
+                        dUser.className = "font-bold text-slate-900 uppercase";
+                        dUser.innerText = isUsed ? loan.user_name : '';
+                        td2.appendChild(dUser);
+                        if(isUsed) {
+                            const dDue = document.createElement('div');
+                            dDue.className = "text-[10px] text-rose-500 font-bold mt-1";
+                            dDue.innerText = `PULANG: ${loan.end_date}`;
+                            td2.appendChild(dDue);
+                        }
+                        tr.appendChild(td2);
+
+                        const td3 = document.createElement('td');
+                        td3.className = groupClass;
+                        td3.innerText = group;
+                        tr.appendChild(td3);
+
+                        const td4 = document.createElement('td');
+                        td4.className = "p-4 text-center";
+                        const sAvail = document.createElement('span');
+                        sAvail.className = `px-3 py-1 rounded font-black text-[9px] ${isUsed ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}`;
+                        sAvail.innerText = isUsed ? 'IN USED' : 'AVAILABLE';
+                        td4.appendChild(sAvail);
+                        tr.appendChild(td4);
+
+                        const td5 = document.createElement('td');
+                        td5.className = "p-4 font-medium text-slate-500 uppercase";
+                        td5.innerText = isUsed ? (loan.usage_details || loan.usage_type) : '';
+                        tr.appendChild(td5);
+
                         body.appendChild(tr);
                     });
                 } catch (e) {
@@ -1673,7 +1688,7 @@
                     const { error } = await sbClient.from('rekod_pinjaman').insert([p]); if(error) throw error;
                     await sbClient.from('device_inventory').update({status:'Dipinjam'}).eq('tag', p.device_tag);
                     Utils.showToast("Transaksi Berjaya"); document.getElementById('loanForm').reset(); Loan.loadData();
-                } catch(e) { alert(e.message); }
+                } catch(e) { Utils.showToast("Ralat menyimpan transaksi."); }
             },
             submitReturn: async () => {
                 const t = document.getElementById('returnSelect').value; if(!t) return;
@@ -1684,7 +1699,7 @@
                         if(error) throw error; await sbClient.from('device_inventory').update({status:'Tersedia'}).eq('tag', t);
                         Utils.showToast("Aset dipulangkan"); Loan.loadData();
                     }
-                } catch(e) { alert(e.message); }
+                } catch(e) { Utils.showToast("Ralat kemaskini pulangan."); }
             },
             loadHistory: async () => {
                 const tb = document.getElementById('loan-history-body'); tb.innerHTML = '';
@@ -1713,7 +1728,7 @@
                             tr.appendChild(tdPulang); addTd(l.status, `p-4 font-bold ${isLate ? 'text-late' : ''}`); tb.appendChild(tr);
                         });
                     }
-                } catch(e) { tb.innerHTML = 'History Load Error.'; }
+                } catch(e) { tb.innerHTML = DOMPurify.sanitize('<tr><td colspan="10" class="p-10 text-center text-rose-500">History Load Error.</td></tr>'); }
             },
             exportExcel: async () => {
                 const formatted = Loan.currentHistory.map(l => {
@@ -1748,8 +1763,15 @@
                 } catch(e) {}
             },
             sendSoftReminder: async (loans) => {
-                const user = loans[0].user_name; const assetList = loans.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
-                const msg = `Salam sejahtera ${user},\n\nSistem mengesan peminjaman aset IT berikut masih belum dipulangkan:\n\n${assetList}\n\nTerima kasih.`;
+                const user = loans[0].user_name; const assetList = loans.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('
+');
+                const msg = `Salam sejahtera ${user},
+
+Sistem mengesan peminjaman aset IT berikut masih belum dipulangkan:
+
+${assetList}
+
+Terima kasih.`;
                 const rawEmail = STATE.userEmails[user.toUpperCase().trim()];
                 if (rawEmail) { await EmailService.sendNoReply(rawEmail, user, msg); Utils.showToast(`Peringatan dihantar ke ${rawEmail}`); }
                 else Utils.showToast(`Gagal: Emel untuk ${user} tidak dijumpai.`);
@@ -1759,8 +1781,15 @@
                 for (const [user, items] of Object.entries(grouped)) {
                     const userKey = user.toUpperCase().trim(); const rawEmail = STATE.userEmails[userKey];
                     if (rawEmail) {
-                        const assetList = items.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
-                        const msg = `Salam sejahtera ${user},\n\nIni adalah peringatan mesra automatik bagi pemulangan aset IT yang tamat tempoh:\n\n${assetList}\n\nTerima kasih.`;
+                        const assetList = items.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('
+');
+                        const msg = `Salam sejahtera ${user},
+
+Ini adalah peringatan mesra automatik bagi pemulangan aset IT yang tamat tempoh:
+
+${assetList}
+
+Terima kasih.`;
                         try { await EmailService.sendNoReply(rawEmail, user, msg); processed++; } catch (e) { failed++; }
                         await new Promise(r => setTimeout(r, 1200));
                     } else failed++;
@@ -1774,7 +1803,7 @@
                 try {
                     const { error } = await sbClient.from('user_ba').insert([{ id: crypto.randomUUID(), name: n.toUpperCase(), emel: finalEmail }]); 
                     if(error) throw error; Utils.showToast("Didaftarkan"); Loan.loadData();
-                } catch(err) { alert(err.message); }
+                } catch(err) { Utils.showToast("Ralat mendaftar pengguna."); }
             },
             addDevice: async () => {
                 const t = document.getElementById('newTag').value.trim(); const tp = document.getElementById('newType').value.trim();
@@ -1782,7 +1811,7 @@
                 try {
                     const { error } = await sbClient.from('device_inventory').insert([{ tag: t, type: tp, serial: sn, status: 'Tersedia', created_at: new Date().toISOString() }]); 
                     if(error) throw error; Utils.showToast("Aset didaftarkan"); Loan.loadData();
-                } catch(err) { alert(err.message); }
+                } catch(err) { Utils.showToast("Ralat mendaftar peranti."); }
             },
 
             copyStatusScreenshot: async () => {
@@ -1799,24 +1828,13 @@
                 tempContainer.style.cssText = 'position:fixed; left:-9999px; top:0; min-width:850px; background:white; padding:15px; font-family:Arial, sans-serif;';
                 
                 const header = document.createElement('div');
-                header.innerHTML = `<h2 style="color:#1e293b; font-weight:bold; font-size:15px; margin-bottom:10px; border-bottom:2px solid black; padding-bottom:5px;">STATUS PINJAMAN ASET ICT</h2>`;
+                header.innerHTML = DOMPurify.sanitize('<h2 style="color:#1e293b; font-weight:bold; font-size:15px; margin-bottom:10px; border-bottom:2px solid black; padding-bottom:5px;">STATUS PINJAMAN ASET ICT</h2>');
                 tempContainer.appendChild(header);
 
                 const tempTable = document.createElement('table');
                 tempTable.style.cssText = 'width:100%; border-collapse:collapse; font-size:11px; border:1px solid black; table-layout: auto;';
                 
-                tempTable.innerHTML = `
-                    <thead>
-                        <tr style="background:#f1f5f9; font-weight:bold;">
-                            <th style="padding:4px; text-align:left; border:1px solid black; width:90px; white-space: nowrap;">TAG LAPTOP</th>
-                            <th style="padding:4px; text-align:left; border:1px solid black; min-width:180px;">NAMA PEMINJAM</th>
-                            <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">GROUP</th>
-                            <th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">AVAILABILITY</th>
-                            <th style="padding:4px; text-align:left; border:1px solid black; min-width:150px;">TUJUAN</th>
-                        </tr>
-                    </thead>
-                    <tbody id="temp-body"></tbody>
-                `;
+                tempTable.innerHTML = DOMPurify.sanitize('<thead><tr style="background:#f1f5f9; font-weight:bold;"><th style="padding:4px; text-align:left; border:1px solid black; width:90px; white-space: nowrap;">TAG LAPTOP</th><th style="padding:4px; text-align:left; border:1px solid black; min-width:180px;">NAMA PEMINJAM</th><th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">GROUP</th><th style="padding:4px; text-align:center; border:1px solid black; width:100px; white-space: nowrap;">AVAILABILITY</th><th style="padding:4px; text-align:left; border:1px solid black; min-width:150px;">TUJUAN</th></tr></thead><tbody id="temp-body"></tbody>');
                 
                 const tempBody = tempTable.querySelector('#temp-body');
                 const allRows = document.querySelectorAll('#active-loans-body tr');
@@ -1838,14 +1856,9 @@
                         const statusBg = isUsed ? '#f6b26b' : '#b6d7a8';
 
                         const newRow = document.createElement('tr');
-                        // VULNERABILITY FIX: Escaping inner text before writing to HTML string
-                        newRow.innerHTML = `
-                            <td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">${Utils.escapeHTML(tagText)}</td>
-                            <td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">${Utils.escapeHTML(cells[1].innerText || '')}</td>
-                            <td style="padding:3px 5px; border:1px solid black; text-align:center; background:${groupBg}; font-weight:bold; vertical-align:middle; white-space: nowrap;">${Utils.escapeHTML(groupText)}</td>
-                            <td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:${statusBg}; vertical-align:middle; text-align:center; white-space: nowrap;">${isUsed ? 'IN USED' : 'AVAILABLE'}</td>
-                            <td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">${Utils.escapeHTML(cells[4].innerText || '')}</td>
-                        `;
+                        
+                        newRow.innerHTML = DOMPurify.sanitize('<td style="padding:3px 5px; border:1px solid black; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(tagText) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; vertical-align:middle; white-space: normal; word-break: keep-all;">' + Utils.escapeHTML(cells[1].innerText || '') + '</td><td style="padding:3px 5px; border:1px solid black; text-align:center; background:' + groupBg + '; font-weight:bold; vertical-align:middle; white-space: nowrap;">' + Utils.escapeHTML(groupText) + '</td><td style="padding:3px 5px; border:1px solid black; font-weight:bold; background:' + statusBg + '; vertical-align:middle; text-align:center; white-space: nowrap;">' + (isUsed ? 'IN USED' : 'AVAILABLE') + '</td><td style="padding:3px 5px; border:1px solid black; font-size:10px; vertical-align:middle; line-height:1.2;">' + Utils.escapeHTML(cells[4].innerText || '') + '</td>');
+                        
                         tempBody.appendChild(newRow);
                     }
                 });
@@ -1879,7 +1892,7 @@
                     const { data: inventory } = await sbClient.from('device_inventory').select('tag').order('tag', { ascending: true });
                     const { data: loans } = await sbClient.from('rekod_pinjaman').select('device_tag, created_at').gte('created_at', `${currentYear}-01-01`);
                     
-                    if (!inventory) return tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center">Tiada data inventori dijumpai.</td></tr>';
+                    if (!inventory) return tb.innerHTML = DOMPurify.sanitize('<tr><td colspan="14" class="p-10 text-center">Tiada data inventori dijumpai.</td></tr>');
 
                     const statsMap = {};
                     inventory.forEach(item => {
@@ -1923,7 +1936,7 @@
                     });
                 } catch (e) { 
                     console.error(e);
-                    tb.innerHTML = '<tr><td colspan="14" class="p-10 text-center text-rose-500">Ralat memuatkan statistik.</td></tr>'; 
+                    tb.innerHTML = DOMPurify.sanitize('<tr><td colspan="14" class="p-10 text-center text-rose-500">Ralat memuatkan statistik.</td></tr>'); 
                 }
             },
             exportExcel: () => {
@@ -2062,12 +2075,12 @@
                     renderRow(1, "Log Panggilan (Call Log)", callCounts, callTotal); 
                     renderRow(2, "Rekod Pinjaman Peralatan", loanCounts, loanTotal);
                     renderRow(3, "SOLMAN (Sistem & Komunikasi)", solmanCounts, solmanTotal, '#f59e0b'); 
-                    renderRow(4, "SPMP (MYGOVUC3.0\\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
+                    renderRow(4, "SPMP (MYGOVUC3.0\GMAIL)", spmpCounts, spmpTotal, '#06b6d4');
                     renderRow(5, "AD (DOMAIN)", adCounts, adTotal, '#f43f5e'); 
                     
                     Summary.renderChart(callCounts, "Log Panggilan (Call Log)");
                 } catch (e) { 
-                    tb.innerHTML = `Ralat memuatkan data ringkasan: ${Utils.escapeHTML(e.message)}`; 
+                    tb.innerHTML = DOMPurify.sanitize(`<tr><td colspan="15" class="p-10 text-center text-rose-500">Ralat memuatkan data ringkasan.</td></tr>`); 
                 }
             },
 
@@ -2121,6 +2134,14 @@
                 const file = event.target.files[0];
                 if (!file) return;
 
+                // Security Fix: Prevent large file processing to avoid browser crashes (Max 5MB)
+                const MAX_FILE_SIZE = 5 * 1024 * 1024;
+                if (file.size > MAX_FILE_SIZE) {
+                    Utils.showToast("Fail terlalu besar. Saiz maksimum adalah 5MB.");
+                    event.target.value = "";
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const data = new Uint8Array(e.target.result);
@@ -2131,16 +2152,17 @@
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
                     this.dataToSync = json.map(row => ({
-                        ic_number: row['User name'] ? String(row['User name']).trim() : null,
-                        nama: row['Complete name'] ? String(row['Complete name']).trim() : null,
-                        telefon: row['Telephone'] ? String(row['Telephone']).trim() : null,
-                        emel: row['E-Mail Address'] ? String(row['E-Mail Address']).trim() : null,
-                        gred: row['Job Grade'] ? String(row['Job Grade']).trim() : null,
-                        kod_ptj: row['Functional Area'] ? String(row['Functional Area']).trim() : null,
-                        department: row['Department'] ? String(row['Department']).trim() : null
+                        // Security Fix: Sanitize incoming external data using DOMPurify and Escape logic
+                        ic_number: row['User name'] ? DOMPurify.sanitize(String(row['User name']).trim()) : null,
+                        nama: row['Complete name'] ? DOMPurify.sanitize(String(row['Complete name']).trim()) : null,
+                        telefon: row['Telephone'] ? DOMPurify.sanitize(String(row['Telephone']).trim()) : null,
+                        emel: row['E-Mail Address'] ? DOMPurify.sanitize(String(row['E-Mail Address']).trim()) : null,
+                        gred: row['Job Grade'] ? DOMPurify.sanitize(String(row['Job Grade']).trim()) : null,
+                        kod_ptj: row['Functional Area'] ? DOMPurify.sanitize(String(row['Functional Area']).trim()) : null,
+                        department: row['Department'] ? DOMPurify.sanitize(String(row['Department']).trim()) : null
                     })).filter(row => row.ic_number !== null && row.ic_number !== ""); 
 
-                    Utils.showToast(`Successfully mapped ${this.dataToSync.length} valid rows from Excel. Press 'Sync to Database' to upload.`);
+                    Utils.showToast(`Berjaya memuat naik ${this.dataToSync.length} baris dari Excel. Klik 'Sync to Database' untuk sambung.`);
                     document.getElementById('excel-file-input').value = "";
                 };
                 reader.readAsArrayBuffer(file);
@@ -2148,7 +2170,7 @@
 
             syncData: async function() {
                 if (this.dataToSync.length === 0) {
-                    alert("No data to sync. Please insert an Excel file first.");
+                    Utils.showToast("Tiada data untuk disegerakkan. Sila muat naik Excel terlebih dahulu.");
                     return;
                 }
 
@@ -2196,10 +2218,10 @@
 
                         if (insertError) throw insertError;
                         
-                        Utils.showToast(`Success! Inserted ${newRecords.length} new records. Ignored ${duplicateCount} duplicates.`);
+                        Utils.showToast(`Berjaya! Memasukkan ${newRecords.length} rekod baru. Abaikan ${duplicateCount} pendua.`);
                         Dashboard.refresh(); 
                     } else {
-                        Utils.showToast(`No new records to insert. All ${duplicateCount} records already exist.`);
+                        Utils.showToast(`Tiada rekod baru. Semua ${duplicateCount} rekod telah wujud.`);
                     }
 
                     this.dataToSync = []; 
@@ -2210,7 +2232,7 @@
 
                 } catch (error) {
                     console.error("Error syncing to Supabase:", error);
-                    alert("Failed to sync data: " + error.message);
+                    Utils.showToast("Ralat menyegerakkan data.");
                     
                     const syncBtn = document.getElementById('btn-sync-supabase');
                     syncBtn.innerHTML = '<i data-lucide="upload-cloud" class="w-4 h-4"></i> Sync to Database';
