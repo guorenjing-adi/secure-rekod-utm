@@ -9,7 +9,7 @@
     default-src 'self'; 
     style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; 
     script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.sheetjs.com;
-    connect-src 'self' https://ftjmbalkooihipuewqqb.supabase.co https://api.emailjs.com;
+    connect-src 'self' https://ftjmbalkooihipuewqqb.supabase.co https://api.emailjs.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com;
     font-src 'self' https://fonts.gstatic.com;
     img-src 'self' data:;
 ">
@@ -1763,8 +1763,7 @@
                 } catch(e) {}
             },
             sendSoftReminder: async (loans) => {
-                const user = loans[0].user_name; const assetList = loans.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('
-');
+                const user = loans[0].user_name; const assetList = loans.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
                 const msg = `Salam sejahtera ${user},
 
 Sistem mengesan peminjaman aset IT berikut masih belum dipulangkan:
@@ -1781,8 +1780,7 @@ Terima kasih.`;
                 for (const [user, items] of Object.entries(grouped)) {
                     const userKey = user.toUpperCase().trim(); const rawEmail = STATE.userEmails[userKey];
                     if (rawEmail) {
-                        const assetList = items.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('
-');
+                        const assetList = items.map(l => `- ${l.device_tag} (Tamat: ${l.end_date})`).join('\n');
                         const msg = `Salam sejahtera ${user},
 
 Ini adalah peringatan mesra automatik bagi pemulangan aset IT yang tamat tempoh:
